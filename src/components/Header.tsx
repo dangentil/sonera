@@ -8,7 +8,7 @@ const Header = () => {
         <div className="flex items-center gap-6">
           <div className="flex items-center gap-2">
             <Music className="w-6 h-6 text-primary" />
-            <span className="text-primary font-bold text-xl tracking-tight">SONIC PULSE</span>
+            <span className="text-primary font-bold text-xl tracking-tight">Sonera</span>
           </div>
           <nav className="hidden md:flex space-x-6">
             <a href="#" className="text-muted-foreground hover:text-accent transition-colors font-medium text-sm">Feed</a>
