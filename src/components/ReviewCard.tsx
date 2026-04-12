@@ -64,14 +64,20 @@ const ReviewCard = ({
       </div>
 
       {/* Criteria breakdown */}
-      <div className="mt-4 grid grid-cols-2 md:grid-cols-3 gap-2">
-        {criteria.map((c) => (
-          <div key={c.name} className="flex items-center justify-between bg-muted/50 rounded-md px-3 py-1.5">
-            <span className="text-xs text-muted-foreground truncate mr-2">{c.name}</span>
-            <span className="text-xs font-semibold text-foreground">{c.score.toFixed(1)}</span>
-          </div>
-        ))}
-      </div>
+      {/* Criteria breakdown — collapsible */}
+      <details className="mt-4 group">
+        <summary className="text-xs text-muted-foreground cursor-pointer hover:text-foreground transition-colors select-none">
+          Ver critérios ({criteria.length})
+        </summary>
+        <div className="mt-2 grid grid-cols-2 md:grid-cols-3 gap-1.5">
+          {criteria.map((c) => (
+            <div key={c.name} className="flex items-center justify-between bg-muted/50 rounded-md px-2.5 py-1">
+              <span className="text-[11px] text-muted-foreground truncate mr-1.5">{c.name}</span>
+              <span className="text-[11px] font-semibold text-foreground">{c.score.toFixed(1)}</span>
+            </div>
+          ))}
+        </div>
+      </details>
 
       {/* Actions */}
       <div className="mt-4 flex items-center gap-5 pt-3 border-t border-border">
