@@ -1,22 +1,7 @@
 import Header from "@/components/Header";
 import ReviewCard from "@/components/ReviewCard";
 import RankingSidebar from "@/components/RankingSidebar";
-
-const defaultCriteria = [
-  { name: "Letras", weight: 10 },
-  { name: "Impacto Pessoal", weight: 10 },
-  { name: "Riqueza Musical", weight: 9 },
-  { name: "Autenticidade", weight: 8 },
-  { name: "Produção / Arranjo", weight: 9 },
-  { name: "Dinâmica das Faixas", weight: 7 },
-  { name: "Mix / Master", weight: 7 },
-  { name: "Peso Histórico", weight: 5 },
-  { name: "Branding / Storytelling", weight: 6 },
-  { name: "Qualidade Técnica", weight: 7 },
-  { name: "Bangers", weight: 7 },
-  { name: "Emoção", weight: 9 },
-  { name: "Criatividade", weight: 6 },
-];
+import { motion } from "framer-motion";
 
 const mockReviews = [
   {
@@ -110,17 +95,21 @@ const mockReviews = [
 
 const Index = () => {
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background pb-20 md:pb-0">
       <Header />
-      <main className="container mx-auto px-4 md:px-8 py-8 flex gap-8">
+      <main className="container mx-auto px-4 md:px-8 py-6 md:py-8 flex gap-8">
         {/* Feed */}
         <section className="flex-1 min-w-0">
-          <h1 className="font-bold text-2xl md:text-3xl text-foreground mb-6">
+          <motion.h1
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="font-bold text-xl md:text-2xl text-foreground mb-6"
+          >
             Últimas <span className="text-gradient">Avaliações</span>
-          </h1>
-          <div className="space-y-6">
+          </motion.h1>
+          <div className="space-y-5">
             {mockReviews.map((review, i) => (
-              <ReviewCard key={i} {...review} />
+              <ReviewCard key={i} {...review} index={i} />
             ))}
           </div>
         </section>

@@ -1,4 +1,6 @@
 import { Trophy, TrendingUp, Filter } from "lucide-react";
+import { Link } from "react-router-dom";
+import { motion } from "framer-motion";
 
 const rankings = [
   { rank: 1, album: "Cosmic Echoes", artist: "Nebula Bloom", score: 4.9 },
@@ -8,76 +10,82 @@ const rankings = [
   { rank: 5, album: "Velvet Horizon", artist: "Dream Weavers", score: 4.5 },
 ];
 
-const genres = ["Indie Rock", "Eletrônica", "Pop", "Hip-Hop", "Jazz", "R&B", "Folk", "Metal"];
+const genres = ["Indie Rock", "Eletrônica", "Pop", "Hip-Hop", "Jazz", "R&B"];
 
 const RankingSidebar = () => {
   return (
-    <aside className="w-72 shrink-0 hidden lg:flex flex-col gap-6 sticky top-24">
+    <motion.aside
+      initial={{ opacity: 0, x: 20 }}
+      animate={{ opacity: 1, x: 0 }}
+      transition={{ duration: 0.5, delay: 0.3 }}
+      className="w-72 shrink-0 hidden lg:flex flex-col gap-5 sticky top-[4.5rem]"
+    >
       {/* Top Charts */}
-      <div className="bg-card rounded-xl p-5 border border-border">
+      <div className="bg-card rounded-2xl p-5 border border-border/60">
         <div className="flex items-center gap-2 mb-4">
-          <Trophy className="w-5 h-5 text-accent" />
-          <h3 className="text-accent font-bold text-base">Top Charts</h3>
+          <Trophy className="w-4 h-4 text-accent" />
+          <h3 className="text-xs font-semibold text-foreground uppercase tracking-[0.12em]">Top Charts</h3>
         </div>
-        <div className="space-y-3">
+        <div className="space-y-2.5">
           {rankings.map((r) => (
             <div key={r.rank} className="flex items-center gap-3 group cursor-pointer">
-              <span className="text-xs font-bold text-muted-foreground w-5 text-center">
+              <span className={`text-[11px] font-bold w-4 text-center ${r.rank <= 3 ? "text-accent" : "text-muted-foreground"}`}>
                 {r.rank}
               </span>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold text-foreground truncate group-hover:text-accent transition-colors">
+                <p className="text-xs font-medium text-foreground truncate group-hover:text-accent transition-colors">
                   {r.album}
                 </p>
-                <p className="text-xs text-muted-foreground truncate">{r.artist}</p>
+                <p className="text-[10px] text-muted-foreground truncate">{r.artist}</p>
               </div>
-              <div className="flex items-center gap-1">
-                <span className="text-xs font-bold text-primary">{r.score}</span>
-              </div>
+              <span className="text-[11px] font-semibold text-primary">{r.score}</span>
             </div>
           ))}
         </div>
-        <button className="mt-4 w-full text-center text-xs text-primary font-semibold hover:underline">
+        <Link
+          to="/rankings"
+          className="mt-4 block w-full text-center text-[10px] text-primary font-medium uppercase tracking-wider hover:underline"
+        >
           Ver ranking completo →
-        </button>
+        </Link>
       </div>
 
       {/* Trending */}
-      <div className="bg-card rounded-xl p-5 border border-border">
+      <div className="bg-card rounded-2xl p-5 border border-border/60">
         <div className="flex items-center gap-2 mb-4">
-          <TrendingUp className="w-5 h-5 text-primary" />
-          <h3 className="text-primary font-bold text-base">Em Alta</h3>
+          <TrendingUp className="w-4 h-4 text-primary" />
+          <h3 className="text-xs font-semibold text-foreground uppercase tracking-[0.12em]">Em Alta</h3>
         </div>
         <div className="space-y-2">
-          <div className="bg-muted/50 rounded-md px-3 py-2">
-            <p className="text-sm font-semibold text-foreground">Album do Mês</p>
-            <p className="text-xs text-muted-foreground">Starlight Serenade — 215 reviews</p>
+          <div className="bg-muted/30 rounded-xl px-3.5 py-2.5">
+            <p className="text-xs font-medium text-foreground">Álbum do Mês</p>
+            <p className="text-[10px] text-muted-foreground">Starlight Serenade — 215 reviews</p>
           </div>
-          <div className="bg-muted/50 rounded-md px-3 py-2">
-            <p className="text-sm font-semibold text-foreground">Artista da Semana</p>
-            <p className="text-xs text-muted-foreground">The Celestial Drifters</p>
+          <div className="bg-muted/30 rounded-xl px-3.5 py-2.5">
+            <p className="text-xs font-medium text-foreground">Artista da Semana</p>
+            <p className="text-[10px] text-muted-foreground">The Celestial Drifters</p>
           </div>
         </div>
       </div>
 
       {/* Genres */}
-      <div className="bg-card rounded-xl p-5 border border-border">
+      <div className="bg-card rounded-2xl p-5 border border-border/60">
         <div className="flex items-center gap-2 mb-4">
-          <Filter className="w-5 h-5 text-accent" />
-          <h3 className="text-accent font-bold text-base">Gêneros</h3>
+          <Filter className="w-4 h-4 text-accent" />
+          <h3 className="text-xs font-semibold text-foreground uppercase tracking-[0.12em]">Gêneros</h3>
         </div>
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap gap-1.5">
           {genres.map((g) => (
             <span
               key={g}
-              className="px-3 py-1 rounded-full text-xs font-medium bg-secondary text-secondary-foreground hover:bg-primary hover:text-primary-foreground cursor-pointer transition-colors"
+              className="px-2.5 py-1 rounded-full text-[10px] font-medium bg-muted/50 text-muted-foreground hover:bg-primary hover:text-primary-foreground cursor-pointer transition-all duration-200"
             >
               {g}
             </span>
           ))}
         </div>
       </div>
-    </aside>
+    </motion.aside>
   );
 };
 
