@@ -1,6 +1,7 @@
 import { useState } from "react";
 import Header from "@/components/Header";
 import { Trophy, Star, ChevronDown } from "lucide-react";
+import { motion } from "framer-motion";
 
 const filters = ["Geral", "Rock", "Pop", "Hip-Hop", "Eletrônica", "Jazz", "R&B", "Folk", "Metal", "Indie"];
 const periods = ["Todos", "2020s", "2010s", "2000s", "90s", "80s", "Clássicos"];
@@ -19,10 +20,10 @@ const mockRankings = [
 ];
 
 const RankBadge = ({ rank }: { rank: number }) => {
-  if (rank === 1) return <div className="w-8 h-8 rounded-full bg-accent/20 flex items-center justify-center"><Trophy className="w-4 h-4 text-accent" /></div>;
-  if (rank === 2) return <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center text-xs font-bold text-foreground">2</div>;
-  if (rank === 3) return <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-xs font-bold text-primary">3</div>;
-  return <span className="w-8 text-center text-sm text-muted-foreground font-semibold">{rank}</span>;
+  if (rank === 1) return <div className="w-8 h-8 rounded-full bg-accent/15 flex items-center justify-center"><Trophy className="w-4 h-4 text-accent" /></div>;
+  if (rank === 2) return <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center text-xs font-bold text-foreground/70">2</div>;
+  if (rank === 3) return <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-xs font-bold text-primary/70">3</div>;
+  return <span className="w-8 text-center text-xs text-muted-foreground font-medium">{rank}</span>;
 };
 
 const Rankings = () => {
@@ -30,24 +31,26 @@ const Rankings = () => {
   const [activePeriod, setActivePeriod] = useState("Todos");
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background pb-20 md:pb-0">
       <Header />
-      <main className="container mx-auto px-4 md:px-8 py-8 max-w-3xl">
-        <h1 className="font-bold text-2xl md:text-3xl text-foreground mb-1">
-          <span className="text-gradient">Rankings</span>
-        </h1>
-        <p className="text-muted-foreground text-sm mb-6">Os álbuns mais bem avaliados pela comunidade.</p>
+      <main className="container mx-auto px-4 md:px-8 py-6 md:py-8 max-w-3xl">
+        <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}>
+          <h1 className="font-bold text-xl md:text-2xl text-foreground mb-1">
+            <span className="text-gradient">Rankings</span>
+          </h1>
+          <p className="text-muted-foreground text-xs mb-5">Os álbuns mais bem avaliados pela comunidade.</p>
+        </motion.div>
 
         {/* Genre filters */}
-        <div className="flex gap-2 overflow-x-auto pb-2 mb-4 scrollbar-none">
+        <div className="flex gap-1.5 overflow-x-auto pb-2 mb-3 scrollbar-none">
           {filters.map((f) => (
             <button
               key={f}
               onClick={() => setActiveGenre(f)}
-              className={`px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors ${
+              className={`px-3 py-1.5 rounded-lg text-[11px] font-medium whitespace-nowrap transition-all duration-200 ${
                 activeGenre === f
-                  ? "bg-primary text-primary-foreground"
-                  : "bg-secondary text-secondary-foreground hover:bg-muted"
+                  ? "bg-primary text-primary-foreground shadow-sm"
+                  : "bg-card text-muted-foreground hover:text-foreground border border-border/40"
               }`}
             >
               {f}
@@ -56,15 +59,15 @@ const Rankings = () => {
         </div>
 
         {/* Period filters */}
-        <div className="flex gap-2 overflow-x-auto pb-4 mb-6 scrollbar-none">
+        <div className="flex gap-1.5 overflow-x-auto pb-3 mb-5 scrollbar-none">
           {periods.map((p) => (
             <button
               key={p}
               onClick={() => setActivePeriod(p)}
-              className={`px-3 py-1 rounded-full text-[11px] font-medium whitespace-nowrap transition-colors ${
+              className={`px-2.5 py-1 rounded-md text-[10px] font-medium whitespace-nowrap transition-all duration-200 ${
                 activePeriod === p
-                  ? "bg-accent text-accent-foreground"
-                  : "bg-muted text-muted-foreground hover:text-foreground"
+                  ? "bg-accent/15 text-accent"
+                  : "text-muted-foreground hover:text-foreground"
               }`}
             >
               {p}
@@ -73,33 +76,36 @@ const Rankings = () => {
         </div>
 
         {/* Rankings list */}
-        <div className="space-y-2">
-          {mockRankings.map((r) => (
-            <div
+        <div className="space-y-1.5">
+          {mockRankings.map((r, i) => (
+            <motion.div
               key={r.rank}
-              className="bg-card rounded-xl p-4 border border-border hover:border-primary/30 transition-colors flex items-center gap-4 cursor-pointer group"
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: i * 0.04, duration: 0.3 }}
+              className="bg-card rounded-xl p-3.5 border border-border/40 hover:border-primary/20 transition-all duration-200 flex items-center gap-3.5 cursor-pointer group"
             >
               <RankBadge rank={r.rank} />
-              <div className="w-12 h-12 rounded-lg overflow-hidden bg-muted shrink-0">
-                <img src={r.imageUrl} alt={r.album} className="w-full h-full object-cover" loading="lazy" />
+              <div className="w-11 h-11 rounded-lg overflow-hidden bg-muted shrink-0 shadow-sm">
+                <img src={r.imageUrl} alt={r.album} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" loading="lazy" />
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold text-foreground truncate group-hover:text-accent transition-colors">{r.album}</p>
-                <p className="text-xs text-muted-foreground truncate">{r.artist} · {r.genre} · {r.year}</p>
+                <p className="text-sm font-medium text-foreground truncate group-hover:text-accent transition-colors">{r.album}</p>
+                <p className="text-[11px] text-muted-foreground truncate">{r.artist} · {r.genre} · {r.year}</p>
               </div>
               <div className="text-right shrink-0">
                 <div className="flex items-center gap-1">
                   <span className="text-sm font-bold text-primary">{r.score.toFixed(2)}</span>
-                  <Star className="w-3.5 h-3.5 text-accent fill-accent" />
+                  <Star className="w-3 h-3 text-accent fill-accent" />
                 </div>
-                <p className="text-[10px] text-muted-foreground">{r.reviews} reviews</p>
+                <p className="text-[10px] text-muted-foreground">{r.reviews.toLocaleString()}</p>
               </div>
-            </div>
+            </motion.div>
           ))}
         </div>
 
-        <button className="mt-6 w-full py-3 rounded-xl bg-card border border-border text-sm text-muted-foreground hover:text-foreground hover:border-primary/30 transition-colors flex items-center justify-center gap-1">
-          Carregar mais <ChevronDown className="w-4 h-4" />
+        <button className="mt-5 w-full py-2.5 rounded-xl bg-card border border-border/40 text-xs text-muted-foreground hover:text-foreground hover:border-primary/20 transition-all duration-200 flex items-center justify-center gap-1">
+          Carregar mais <ChevronDown className="w-3.5 h-3.5" />
         </button>
       </main>
     </div>

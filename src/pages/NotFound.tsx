@@ -1,5 +1,7 @@
-import { useLocation } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import { motion } from "framer-motion";
 
 const NotFound = () => {
   const location = useLocation();
@@ -9,14 +11,24 @@ const NotFound = () => {
   }, [location.pathname]);
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-muted">
-      <div className="text-center">
-        <h1 className="mb-4 text-4xl font-bold">404</h1>
-        <p className="mb-4 text-xl text-muted-foreground">Oops! Page not found</p>
-        <a href="/" className="text-primary underline hover:text-primary/90">
-          Return to Home
-        </a>
-      </div>
+    <div className="min-h-screen bg-background flex items-center justify-center px-4">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+        className="text-center max-w-sm"
+      >
+        <p className="text-6xl font-bold text-gradient mb-2">404</p>
+        <h1 className="text-lg font-bold text-foreground mb-1">Página não encontrada</h1>
+        <p className="text-xs text-muted-foreground mb-6">
+          Essa faixa não está no tracklist. Volte para o feed.
+        </p>
+        <Link to="/">
+          <Button size="sm" className="text-[11px] uppercase tracking-wider">
+            Voltar ao início
+          </Button>
+        </Link>
+      </motion.div>
     </div>
   );
 };

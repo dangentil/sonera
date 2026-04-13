@@ -1,5 +1,6 @@
 import Header from "@/components/Header";
-import { Star, Trophy, Music, Users, Disc3 } from "lucide-react";
+import { Star, Trophy, Music, Disc3 } from "lucide-react";
+import { motion } from "framer-motion";
 
 const favoriteArtists = [
   { name: "Radiohead", imageUrl: "https://picsum.photos/60/60?random=30" },
@@ -20,21 +21,26 @@ const quizAchievements = [
   { artist: "Kendrick Lamar", tier: "Expert", icon: "🥈", accuracy: 82 },
 ];
 
+const fadeUp = {
+  initial: { opacity: 0, y: 16 },
+  animate: { opacity: 1, y: 0 },
+};
+
 const Profile = () => {
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background pb-20 md:pb-0">
       <Header />
-      <main className="container mx-auto px-4 md:px-8 py-8 max-w-3xl">
+      <main className="container mx-auto px-4 md:px-8 py-6 md:py-8 max-w-3xl">
         {/* Profile header */}
-        <div className="bg-card rounded-xl p-6 border border-border mb-6">
-          <div className="flex items-start gap-5">
-            <div className="w-20 h-20 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center text-2xl font-bold text-primary-foreground shrink-0">
+        <motion.div {...fadeUp} transition={{ duration: 0.4 }} className="bg-card rounded-2xl p-5 md:p-6 border border-border/60 mb-5">
+          <div className="flex items-start gap-4">
+            <div className="w-16 h-16 md:w-20 md:h-20 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center text-xl md:text-2xl font-bold text-primary-foreground shrink-0">
               LM
             </div>
             <div className="flex-1 min-w-0">
-              <h1 className="text-xl font-bold text-foreground">Lucas Mendes</h1>
-              <p className="text-sm text-muted-foreground mb-3">@lucasmendes · Entrou em Jan 2024</p>
-              <div className="flex gap-6 text-sm">
+              <h1 className="text-lg md:text-xl font-bold text-foreground">Lucas Mendes</h1>
+              <p className="text-xs text-muted-foreground mb-3">@lucasmendes · Entrou em Jan 2024</p>
+              <div className="flex gap-5 text-xs">
                 <div><span className="font-bold text-foreground">47</span> <span className="text-muted-foreground">avaliações</span></div>
                 <div><span className="font-bold text-foreground">182</span> <span className="text-muted-foreground">seguidores</span></div>
                 <div><span className="font-bold text-foreground">94</span> <span className="text-muted-foreground">seguindo</span></div>
@@ -42,82 +48,82 @@ const Profile = () => {
             </div>
           </div>
 
-          {/* Musical match badge (shown on other's profiles) */}
-          <div className="mt-4 bg-primary/10 rounded-lg p-3 flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
-              <Music className="w-5 h-5 text-primary" />
+          {/* Musical match badge */}
+          <div className="mt-4 bg-primary/8 rounded-xl p-3 flex items-center gap-3 border border-primary/10">
+            <div className="w-9 h-9 rounded-full bg-primary/15 flex items-center justify-center shrink-0">
+              <Music className="w-4 h-4 text-primary" />
             </div>
             <div>
-              <p className="text-sm font-semibold text-primary">78% Match Musical</p>
-              <p className="text-xs text-muted-foreground">Vocês compartilham gostos em Indie, Rock Alternativo e Eletrônica</p>
+              <p className="text-xs font-semibold text-primary">78% Match Musical</p>
+              <p className="text-[10px] text-muted-foreground">Vocês compartilham gostos em Indie, Rock Alternativo e Eletrônica</p>
             </div>
           </div>
-        </div>
+        </motion.div>
 
         {/* Favorite artists */}
-        <div className="bg-card rounded-xl p-5 border border-border mb-6">
+        <motion.div {...fadeUp} transition={{ duration: 0.4, delay: 0.1 }} className="bg-card rounded-2xl p-5 border border-border/60 mb-5">
           <div className="flex items-center gap-2 mb-4">
             <Disc3 className="w-4 h-4 text-accent" />
-            <h2 className="font-bold text-sm text-foreground uppercase tracking-wider">Artistas de Identificação</h2>
+            <h2 className="text-[11px] font-semibold text-foreground uppercase tracking-[0.12em]">Artistas de Identificação</h2>
           </div>
-          <div className="flex gap-4 overflow-x-auto pb-2">
+          <div className="flex gap-3 overflow-x-auto pb-1">
             {favoriteArtists.map((a) => (
               <div key={a.name} className="flex flex-col items-center gap-1.5 shrink-0">
-                <div className="w-14 h-14 rounded-full overflow-hidden ring-2 ring-primary/30">
+                <div className="w-12 h-12 md:w-14 md:h-14 rounded-full overflow-hidden ring-2 ring-primary/20 hover:ring-primary/50 transition-all cursor-pointer">
                   <img src={a.imageUrl} alt={a.name} className="w-full h-full object-cover" />
                 </div>
-                <span className="text-[11px] text-muted-foreground text-center w-16 truncate">{a.name}</span>
+                <span className="text-[10px] text-muted-foreground text-center w-14 truncate">{a.name}</span>
               </div>
             ))}
           </div>
-        </div>
+        </motion.div>
 
         {/* Quiz achievements */}
-        <div className="bg-card rounded-xl p-5 border border-border mb-6">
+        <motion.div {...fadeUp} transition={{ duration: 0.4, delay: 0.2 }} className="bg-card rounded-2xl p-5 border border-border/60 mb-5">
           <div className="flex items-center gap-2 mb-4">
             <Trophy className="w-4 h-4 text-accent" />
-            <h2 className="font-bold text-sm text-foreground uppercase tracking-wider">Conquistas do Quiz</h2>
+            <h2 className="text-[11px] font-semibold text-foreground uppercase tracking-[0.12em]">Conquistas do Quiz</h2>
           </div>
-          <div className="space-y-3">
+          <div className="space-y-2">
             {quizAchievements.map((q) => (
-              <div key={q.artist} className="flex items-center gap-3 bg-muted/50 rounded-lg p-3">
-                <span className="text-xl">{q.icon}</span>
+              <div key={q.artist} className="flex items-center gap-3 bg-muted/20 rounded-xl p-3">
+                <span className="text-lg">{q.icon}</span>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-foreground">{q.artist}</p>
-                  <p className="text-xs text-muted-foreground">{q.tier} · {q.accuracy}% de acerto</p>
+                  <p className="text-xs font-medium text-foreground">{q.artist}</p>
+                  <p className="text-[10px] text-muted-foreground">{q.tier} · {q.accuracy}%</p>
                 </div>
-                <div className="w-16 h-1.5 rounded-full bg-muted overflow-hidden">
-                  <div className="h-full rounded-full bg-accent" style={{ width: `${q.accuracy}%` }} />
+                <div className="w-14 h-1.5 rounded-full bg-muted overflow-hidden">
+                  <div className="h-full rounded-full bg-accent transition-all" style={{ width: `${q.accuracy}%` }} />
                 </div>
               </div>
             ))}
           </div>
-        </div>
+        </motion.div>
 
         {/* Recent reviews */}
-        <div className="bg-card rounded-xl p-5 border border-border">
+        <motion.div {...fadeUp} transition={{ duration: 0.4, delay: 0.3 }} className="bg-card rounded-2xl p-5 border border-border/60">
           <div className="flex items-center gap-2 mb-4">
             <Star className="w-4 h-4 text-primary" />
-            <h2 className="font-bold text-sm text-foreground uppercase tracking-wider">Últimas Avaliações</h2>
+            <h2 className="text-[11px] font-semibold text-foreground uppercase tracking-[0.12em]">Últimas Avaliações</h2>
           </div>
-          <div className="space-y-3">
+          <div className="space-y-2">
             {recentReviews.map((r) => (
-              <div key={r.album} className="flex items-center gap-3 group cursor-pointer">
-                <div className="w-11 h-11 rounded-lg overflow-hidden bg-muted shrink-0">
+              <div key={r.album} className="flex items-center gap-3 group cursor-pointer hover:bg-muted/20 rounded-lg p-2 -mx-2 transition-colors">
+                <div className="w-10 h-10 rounded-lg overflow-hidden bg-muted shrink-0">
                   <img src={r.imageUrl} alt={r.album} className="w-full h-full object-cover" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-foreground truncate group-hover:text-accent transition-colors">{r.album}</p>
-                  <p className="text-xs text-muted-foreground">{r.artist}</p>
+                  <p className="text-xs font-medium text-foreground truncate group-hover:text-accent transition-colors">{r.album}</p>
+                  <p className="text-[10px] text-muted-foreground">{r.artist}</p>
                 </div>
                 <div className="flex items-center gap-1">
-                  <span className="text-sm font-bold text-primary">{r.score.toFixed(1)}</span>
+                  <span className="text-xs font-bold text-primary">{r.score.toFixed(1)}</span>
                   <Star className="w-3 h-3 text-accent fill-accent" />
                 </div>
               </div>
             ))}
           </div>
-        </div>
+        </motion.div>
       </main>
     </div>
   );
