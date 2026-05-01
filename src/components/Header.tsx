@@ -1,8 +1,9 @@
-import { Search, User, Plus, Menu, X } from "lucide-react";
+import { Search, User, Plus, Menu, X, LogOut, LogIn } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link, useLocation } from "react-router-dom";
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useAuth } from "@/hooks/useAuth";
 
 const navLinks = [
   { label: "Feed", href: "/" },
@@ -13,6 +14,7 @@ const navLinks = [
 const Header = () => {
   const location = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const { session, signOut } = useAuth();
 
   return (
     <>
@@ -50,7 +52,7 @@ const Header = () => {
             </nav>
           </div>
           <div className="flex items-center gap-1">
-            <Link to="/rate" className="hidden sm:inline-flex">
+            <Link to={session ? "/rate" : "/auth"} className="hidden sm:inline-flex">
               <Button size="sm" className="text-[10px] tracking-[0.15em] uppercase gap-1.5 h-8 px-3 rounded-lg">
                 <Plus className="w-3 h-3" /> Avaliar
               </Button>
@@ -58,11 +60,24 @@ const Header = () => {
             <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground w-8 h-8">
               <Search className="w-4 h-4" />
             </Button>
-            <Link to="/profile">
-              <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground w-8 h-8">
-                <User className="w-4 h-4" />
-              </Button>
-            </Link>
+            {session ? (
+              <>
+                <Link to="/profile">
+                  <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground w-8 h-8">
+                    <User className="w-4 h-4" />
+                  </Button>
+                </Link>
+                <Button variant="ghost" size="icon" onClick={signOut} className="text-muted-foreground hover:text-foreground w-8 h-8" title="Sair">
+                  <LogOut className="w-4 h-4" />
+                </Button>
+              </>
+            ) : (
+              <Link to="/auth">
+                <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground w-8 h-8" title="Entrar">
+                  <LogIn className="w-4 h-4" />
+                </Button>
+              </Link>
+            )}
             <Button
               variant="ghost"
               size="icon"
