@@ -14,16 +14,182 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      albums: {
+        Row: {
+          artist: string
+          cover_url: string | null
+          created_at: string
+          created_by: string | null
+          genre: string | null
+          id: string
+          release_year: number | null
+          title: string
+        }
+        Insert: {
+          artist: string
+          cover_url?: string | null
+          created_at?: string
+          created_by?: string | null
+          genre?: string | null
+          id?: string
+          release_year?: number | null
+          title: string
+        }
+        Update: {
+          artist?: string
+          cover_url?: string | null
+          created_at?: string
+          created_by?: string | null
+          genre?: string | null
+          id?: string
+          release_year?: number | null
+          title?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          bio: string | null
+          created_at: string
+          display_name: string
+          id: string
+          updated_at: string
+          username: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          bio?: string | null
+          created_at?: string
+          display_name: string
+          id: string
+          updated_at?: string
+          username: string
+        }
+        Update: {
+          avatar_url?: string | null
+          bio?: string | null
+          created_at?: string
+          display_name?: string
+          id?: string
+          updated_at?: string
+          username?: string
+        }
+        Relationships: []
+      }
+      ratings: {
+        Row: {
+          album_id: string
+          authenticity: number
+          bangers: number
+          branding_storytelling: number
+          created_at: string
+          creativity: number
+          emotion: number
+          historical_weight: number
+          id: string
+          lyrics: number
+          mix_master: number
+          musical_richness: number
+          musicianship: number
+          personal_impact: number
+          production: number
+          review_text: string | null
+          track_dynamics: number
+          updated_at: string
+          user_id: string
+          weighted_score: number
+        }
+        Insert: {
+          album_id: string
+          authenticity: number
+          bangers: number
+          branding_storytelling: number
+          created_at?: string
+          creativity: number
+          emotion: number
+          historical_weight: number
+          id?: string
+          lyrics: number
+          mix_master: number
+          musical_richness: number
+          musicianship: number
+          personal_impact: number
+          production: number
+          review_text?: string | null
+          track_dynamics: number
+          updated_at?: string
+          user_id: string
+          weighted_score: number
+        }
+        Update: {
+          album_id?: string
+          authenticity?: number
+          bangers?: number
+          branding_storytelling?: number
+          created_at?: string
+          creativity?: number
+          emotion?: number
+          historical_weight?: number
+          id?: string
+          lyrics?: number
+          mix_master?: number
+          musical_richness?: number
+          musicianship?: number
+          personal_impact?: number
+          production?: number
+          review_text?: string | null
+          track_dynamics?: number
+          updated_at?: string
+          user_id?: string
+          weighted_score?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ratings_album_id_fkey"
+            columns: ["album_id"]
+            isOneToOne: false
+            referencedRelation: "albums"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "user"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +316,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "user"],
+    },
   },
 } as const
