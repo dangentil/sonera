@@ -95,7 +95,7 @@ const RateAlbum = () => {
     }
     const { data, error } = await supabase
       .from("albums")
-      .insert({ ...parsed.data, created_by: user.id })
+      .insert({ ...parsed.data, created_by: user.id } as any)
       .select()
       .single();
     if (error) return toast({ title: "Erro ao adicionar", description: error.message, variant: "destructive" });
