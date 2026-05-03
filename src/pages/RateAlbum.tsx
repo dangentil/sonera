@@ -59,6 +59,9 @@ const RateAlbum = () => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [mode, setMode] = useState<"quick" | "detailed">("quick");
   const [quickRating, setQuickRating] = useState(0);
+  const [visibility, setVisibility] = useState<"public" | "groups">("public");
+  const [myGroups, setMyGroups] = useState<{ id: string; name: string }[]>([]);
+  const [selectedGroupIds, setSelectedGroupIds] = useState<string[]>([]);
 
   // Add album form
   const [aTitle, setATitle] = useState("");
@@ -71,6 +74,15 @@ const RateAlbum = () => {
     supabase.from("albums").select("*").order("created_at", { ascending: false }).limit(100)
       .then(({ data }) => setAlbums(data ?? []));
   }, []);
+
+  useEffect(() => {
+    if (!user) return;
+    supabase.from("group_members").select("group_id, groups(id,name)").eq("user_id", user.id).eq("status", "approved")
+      .then(({ data }) => {
+        const gs = (data ?? []).map((m: any) => m.groups).filter(Boolean);
+        setMyGroups(gs);
+      });
+  }, [user]);
 
   const filtered = search.trim()
     ? albums.filter((a) =>
@@ -109,6 +121,9 @@ const RateAlbum = () => {
   const handleSubmit = async () => {
     if (!user) return;
     if (!selectedAlbum) return toast({ title: "Escolha um álbum", variant: "destructive" });
+    if (visibility === "groups" && selectedGroupIds.length === 0) {
+      return toast({ title: "Escolha pelo menos um grupo", variant: "destructive" });
+    }
     let finalScore = score;
     let finalScores: Partial<Record<CriterionKey, number>> = scores;
     if (mode === "quick") {
@@ -120,13 +135,26 @@ const RateAlbum = () => {
       return toast({ title: "Avalie todos os critérios", variant: "destructive" });
     }
     setBusy(true);
-    const payload: any = { user_id: user.id, album_id: selectedAlbum.id, review_text: reviewText || null, weighted_score: Number(finalScore.toFixed(2)) };
+    const payload: any = { user_id: user.id, album_id: selectedAlbum.id, review_text: reviewText || null, weighted_score: Number(finalScore.toFixed(2)), visibility };
     for (const c of CRITERIA) payload[c.key] = finalScores[c.key];
-    const { error } = await supabase.from("ratings").upsert(payload, { onConflict: "user_id,album_id" });
+    const { data: ratingRow, error } = await supabase.from("ratings")
+      .upsert(payload, { onConflict: "user_id,album_id" })
+      .select("id")
+      .single();
+    if (error || !ratingRow) {
+      setBusy(false);
+      return toast({ title: "Erro ao publicar", description: error?.message, variant: "destructive" });
+    }
+    // sync rating_groups
+    await supabase.from("rating_groups").delete().eq("rating_id", ratingRow.id);
+    if (visibility === "groups" && selectedGroupIds.length) {
+      await supabase.from("rating_groups").insert(
+        selectedGroupIds.map((gid) => ({ rating_id: ratingRow.id, group_id: gid })) as any
+      );
+    }
     setBusy(false);
-    if (error) return toast({ title: "Erro ao publicar", description: error.message, variant: "destructive" });
     toast({ title: "Avaliação publicada!", description: `${selectedAlbum.title} — ${finalScore.toFixed(2)}` });
-    navigate("/rankings");
+    navigate(visibility === "groups" && selectedGroupIds[0] ? `/groups/${selectedGroupIds[0]}` : "/rankings");
   };
 
   return (
