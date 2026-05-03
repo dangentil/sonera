@@ -57,6 +57,8 @@ const RateAlbum = () => {
   const [scores, setScores] = useState<Partial<Record<CriterionKey, number>>>({});
   const [busy, setBusy] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [mode, setMode] = useState<"quick" | "detailed">("quick");
+  const [quickRating, setQuickRating] = useState(0);
 
   // Add album form
   const [aTitle, setATitle] = useState("");
@@ -107,14 +109,23 @@ const RateAlbum = () => {
   const handleSubmit = async () => {
     if (!user) return;
     if (!selectedAlbum) return toast({ title: "Escolha um álbum", variant: "destructive" });
-    if (filledCount < CRITERIA.length) return toast({ title: "Avalie todos os critérios", variant: "destructive" });
+    let finalScore = score;
+    let finalScores: Partial<Record<CriterionKey, number>> = scores;
+    if (mode === "quick") {
+      if (quickRating < 1) return toast({ title: "Escolha uma nota de 1 a 5", variant: "destructive" });
+      const perCriterion = quickRating * 2; // 1-5 -> 2-10
+      finalScores = Object.fromEntries(CRITERIA.map((c) => [c.key, perCriterion])) as Partial<Record<CriterionKey, number>>;
+      finalScore = perCriterion;
+    } else if (filledCount < CRITERIA.length) {
+      return toast({ title: "Avalie todos os critérios", variant: "destructive" });
+    }
     setBusy(true);
-    const payload: any = { user_id: user.id, album_id: selectedAlbum.id, review_text: reviewText || null, weighted_score: Number(score.toFixed(2)) };
-    for (const c of CRITERIA) payload[c.key] = scores[c.key];
+    const payload: any = { user_id: user.id, album_id: selectedAlbum.id, review_text: reviewText || null, weighted_score: Number(finalScore.toFixed(2)) };
+    for (const c of CRITERIA) payload[c.key] = finalScores[c.key];
     const { error } = await supabase.from("ratings").upsert(payload, { onConflict: "user_id,album_id" });
     setBusy(false);
     if (error) return toast({ title: "Erro ao publicar", description: error.message, variant: "destructive" });
-    toast({ title: "Avaliação publicada!", description: `${selectedAlbum.title} — ${score.toFixed(2)}` });
+    toast({ title: "Avaliação publicada!", description: `${selectedAlbum.title} — ${finalScore.toFixed(2)}` });
     navigate("/rankings");
   };
 
@@ -202,6 +213,47 @@ const RateAlbum = () => {
           )}
         </div>
 
+        {/* Mode toggle */}
+        <div className="flex gap-1 p-1 bg-card border border-border/40 rounded-xl mb-4">
+          <button
+            type="button"
+            onClick={() => setMode("quick")}
+            className={`flex-1 text-[11px] uppercase tracking-wider py-2 rounded-lg transition-colors ${mode === "quick" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}
+          >
+            Rápida (1–5)
+          </button>
+          <button
+            type="button"
+            onClick={() => setMode("detailed")}
+            className={`flex-1 text-[11px] uppercase tracking-wider py-2 rounded-lg transition-colors ${mode === "detailed" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}
+          >
+            Detalhada
+          </button>
+        </div>
+
+        {mode === "quick" ? (
+          <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}
+            className="bg-card rounded-xl p-6 border border-border/40 mb-6 flex flex-col items-center gap-3">
+            <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Sua nota</p>
+            <div className="flex gap-1">
+              {[1, 2, 3, 4, 5].map((v) => (
+                <button
+                  key={v}
+                  type="button"
+                  onClick={() => setQuickRating(v)}
+                  className="p-1 transition-transform hover:scale-125 active:scale-95"
+                  aria-label={`${v} de 5`}
+                >
+                  <Star className={`w-9 h-9 transition-colors ${quickRating >= v ? "text-accent fill-accent" : "text-muted-foreground/25"}`} />
+                </button>
+              ))}
+            </div>
+            {quickRating > 0 && (
+              <p className="text-2xl font-bold text-gradient">{(quickRating * 2).toFixed(2)}</p>
+            )}
+          </motion.div>
+        ) : (
+        <>
         {/* Criteria */}
         <div className="space-y-2 mb-6">
           {CRITERIA.map((c, i) => (
@@ -238,6 +290,8 @@ const RateAlbum = () => {
               </div>
             </div>
           </motion.div>
+        )}
+        </>
         )}
 
         <Textarea
