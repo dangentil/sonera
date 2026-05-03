@@ -47,6 +47,74 @@ export type Database = {
         }
         Relationships: []
       }
+      group_members: {
+        Row: {
+          created_at: string
+          group_id: string
+          id: string
+          role: Database["public"]["Enums"]["group_member_role"]
+          status: Database["public"]["Enums"]["group_member_status"]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          group_id: string
+          id?: string
+          role?: Database["public"]["Enums"]["group_member_role"]
+          status?: Database["public"]["Enums"]["group_member_status"]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          group_id?: string
+          id?: string
+          role?: Database["public"]["Enums"]["group_member_role"]
+          status?: Database["public"]["Enums"]["group_member_status"]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "group_members_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "groups"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      groups: {
+        Row: {
+          created_at: string
+          created_by: string
+          description: string | null
+          id: string
+          name: string
+          slug: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          description?: string | null
+          id?: string
+          name: string
+          slug: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          id?: string
+          name?: string
+          slug?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -77,6 +145,42 @@ export type Database = {
         }
         Relationships: []
       }
+      rating_groups: {
+        Row: {
+          created_at: string
+          group_id: string
+          id: string
+          rating_id: string
+        }
+        Insert: {
+          created_at?: string
+          group_id: string
+          id?: string
+          rating_id: string
+        }
+        Update: {
+          created_at?: string
+          group_id?: string
+          id?: string
+          rating_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rating_groups_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "groups"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rating_groups_rating_id_fkey"
+            columns: ["rating_id"]
+            isOneToOne: false
+            referencedRelation: "ratings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ratings: {
         Row: {
           album_id: string
@@ -98,6 +202,7 @@ export type Database = {
           track_dynamics: number
           updated_at: string
           user_id: string
+          visibility: Database["public"]["Enums"]["rating_visibility"]
           weighted_score: number
         }
         Insert: {
@@ -120,6 +225,7 @@ export type Database = {
           track_dynamics: number
           updated_at?: string
           user_id: string
+          visibility?: Database["public"]["Enums"]["rating_visibility"]
           weighted_score: number
         }
         Update: {
@@ -142,6 +248,7 @@ export type Database = {
           track_dynamics?: number
           updated_at?: string
           user_id?: string
+          visibility?: Database["public"]["Enums"]["rating_visibility"]
           weighted_score?: number
         }
         Relationships: [
@@ -180,6 +287,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      can_view_rating: {
+        Args: { _rating_id: string; _user_id: string }
+        Returns: boolean
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -187,9 +298,20 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_group_admin: {
+        Args: { _group_id: string; _user_id: string }
+        Returns: boolean
+      }
+      is_group_member: {
+        Args: { _group_id: string; _user_id: string }
+        Returns: boolean
+      }
     }
     Enums: {
       app_role: "admin" | "user"
+      group_member_role: "admin" | "member"
+      group_member_status: "pending" | "approved"
+      rating_visibility: "public" | "groups"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -318,6 +440,9 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "user"],
+      group_member_role: ["admin", "member"],
+      group_member_status: ["pending", "approved"],
+      rating_visibility: ["public", "groups"],
     },
   },
 } as const
