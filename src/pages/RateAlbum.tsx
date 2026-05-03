@@ -329,6 +329,39 @@ const RateAlbum = () => {
           className="bg-card border-border/40 min-h-[100px] mb-5 text-sm"
         />
 
+        {/* Visibility */}
+        <div className="bg-card border border-border/40 rounded-xl p-3.5 mb-5">
+          <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-2">Visibilidade</p>
+          <div className="flex gap-1 mb-3">
+            <button type="button" onClick={() => setVisibility("public")}
+              className={`flex-1 text-[11px] uppercase tracking-wider py-2 rounded-lg transition-colors ${visibility === "public" ? "bg-primary text-primary-foreground" : "bg-muted/40 text-muted-foreground hover:text-foreground"}`}>
+              Pública
+            </button>
+            <button type="button" onClick={() => setVisibility("groups")}
+              className={`flex-1 text-[11px] uppercase tracking-wider py-2 rounded-lg transition-colors ${visibility === "groups" ? "bg-primary text-primary-foreground" : "bg-muted/40 text-muted-foreground hover:text-foreground"}`}>
+              Só grupos
+            </button>
+          </div>
+          {visibility === "groups" && (
+            myGroups.length === 0 ? (
+              <p className="text-[11px] text-muted-foreground">Você ainda não é membro aprovado de nenhum grupo. <a href="/groups" className="underline">Criar ou entrar</a>.</p>
+            ) : (
+              <div className="flex flex-wrap gap-1.5">
+                {myGroups.map((g) => {
+                  const active = selectedGroupIds.includes(g.id);
+                  return (
+                    <button key={g.id} type="button"
+                      onClick={() => setSelectedGroupIds(active ? selectedGroupIds.filter((x) => x !== g.id) : [...selectedGroupIds, g.id])}
+                      className={`text-[11px] px-2.5 py-1 rounded-full border transition-colors ${active ? "border-primary bg-primary/10 text-foreground" : "border-border/40 text-muted-foreground hover:text-foreground"}`}>
+                      {g.name}
+                    </button>
+                  );
+                })}
+              </div>
+            )
+          )}
+        </div>
+
         <Button onClick={handleSubmit} disabled={busy} className="w-full text-[11px] uppercase tracking-wider h-11" size="lg">
           {busy ? "Publicando..." : "Publicar Avaliação"}
         </Button>
