@@ -66,7 +66,7 @@ const RateAlbum = () => {
   const [busy, setBusy] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [mode, setMode] = useState<"quick" | "detailed">("quick");
-  const [quickRating, setQuickRating] = useState(0);
+  const [quickRating, setQuickRating] = useState<string>("");
   const [visibility, setVisibility] = useState<"public" | "groups">("public");
   const [myGroups, setMyGroups] = useState<{ id: string; name: string }[]>([]);
   const [selectedGroupIds, setSelectedGroupIds] = useState<string[]>([]);
@@ -213,10 +213,12 @@ const RateAlbum = () => {
     let finalScore = score;
     let finalScores: Partial<Record<CriterionKey, number>> = scores;
     if (mode === "quick") {
-      if (quickRating < 1) return toast({ title: "Escolha uma nota de 1 a 5", variant: "destructive" });
-      const perCriterion = quickRating * 2; // 1-5 -> 2-10
-      finalScores = Object.fromEntries(CRITERIA.map((c) => [c.key, perCriterion])) as Partial<Record<CriterionKey, number>>;
-      finalScore = perCriterion;
+      const num = Number(quickRating.replace(",", "."));
+      if (!Number.isFinite(num) || num < 0 || num > 10) {
+        return toast({ title: "Digite uma nota de 0 a 10", variant: "destructive" });
+      }
+      finalScores = Object.fromEntries(CRITERIA.map((c) => [c.key, num])) as Partial<Record<CriterionKey, number>>;
+      finalScore = num;
     } else if (filledCount < CRITERIA.length) {
       return toast({ title: "Avalie todos os critérios", variant: "destructive" });
     }
@@ -386,23 +388,19 @@ const RateAlbum = () => {
         {mode === "quick" ? (
           <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}
             className="bg-card rounded-xl p-6 border border-border/40 mb-6 flex flex-col items-center gap-3">
-            <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Sua nota</p>
-            <div className="flex gap-1">
-              {[1, 2, 3, 4, 5].map((v) => (
-                <button
-                  key={v}
-                  type="button"
-                  onClick={() => setQuickRating(v)}
-                  className="p-1 transition-transform hover:scale-125 active:scale-95"
-                  aria-label={`${v} de 5`}
-                >
-                  <Star className={`w-9 h-9 transition-colors ${quickRating >= v ? "text-accent fill-accent" : "text-muted-foreground/25"}`} />
-                </button>
-              ))}
-            </div>
-            {quickRating > 0 && (
-              <p className="text-2xl font-bold text-gradient">{(quickRating * 2).toFixed(2)}</p>
-            )}
+            <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Sua nota (0 a 10)</p>
+            <Input
+              type="number"
+              inputMode="decimal"
+              min={0}
+              max={10}
+              step={0.01}
+              placeholder="ex: 8.5"
+              value={quickRating}
+              onChange={(e) => setQuickRating(e.target.value)}
+              className="w-32 text-center text-2xl font-bold h-14 bg-background border-border/40"
+            />
+            <p className="text-[10px] text-muted-foreground">Aceita decimais (ex: 7.25)</p>
           </motion.div>
         ) : (
         <>
