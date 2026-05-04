@@ -109,11 +109,6 @@ const RateAlbum = () => {
     const ctrl = new AbortController();
     const t = setTimeout(async () => {
       try {
-        const { data, error } = await supabase.functions.invoke("musicbrainz-search", {
-          body: null,
-          method: "GET" as any,
-        });
-        // supabase-js doesn't pass query params via invoke, so call URL directly:
         const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/musicbrainz-search?q=${encodeURIComponent(term)}`;
         const res = await fetch(url, {
           signal: ctrl.signal,
