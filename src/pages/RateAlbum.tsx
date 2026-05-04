@@ -325,8 +325,46 @@ const RateAlbum = () => {
                   ))}
                 </div>
               )}
-              {filtered.length === 0 && (
-                <p className="text-[11px] text-muted-foreground text-center py-3">Nenhum álbum encontrado. Adicione um novo.</p>
+              {search.trim().length >= 2 && (mbFiltered.length > 0 || mbLoading) && (
+                <div className="bg-card border border-border/40 rounded-xl divide-y divide-border/40 max-h-72 overflow-y-auto">
+                  <div className="px-3 py-1.5 text-[9px] uppercase tracking-wider text-muted-foreground bg-muted/20">
+                    Catálogo MusicBrainz {mbLoading && "· buscando..."}
+                  </div>
+                  {mbFiltered.map((m) => (
+                    <button
+                      key={m.mbid}
+                      onClick={() => handlePickExternal(m)}
+                      disabled={importing === m.mbid}
+                      className="w-full flex items-center gap-3 p-2.5 hover:bg-muted/40 transition-colors text-left disabled:opacity-50"
+                    >
+                      {m.cover_url ? (
+                        <img
+                          src={m.cover_url}
+                          alt=""
+                          className="w-9 h-9 rounded-md object-cover bg-muted"
+                          onError={(e) => { (e.currentTarget as HTMLImageElement).style.visibility = "hidden"; }}
+                        />
+                      ) : (
+                        <div className="w-9 h-9 rounded-md bg-muted" />
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs font-medium text-foreground truncate">{m.title}</p>
+                        <p className="text-[10px] text-muted-foreground truncate">
+                          {m.artist}{m.release_year ? ` · ${m.release_year}` : ""}
+                        </p>
+                      </div>
+                      <span className="text-[9px] uppercase tracking-wider text-accent shrink-0">
+                        {importing === m.mbid ? "..." : "Importar"}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              )}
+              {search.trim().length >= 2 && filtered.length === 0 && !mbLoading && mbFiltered.length === 0 && (
+                <p className="text-[11px] text-muted-foreground text-center py-3">Nenhum álbum encontrado.</p>
+              )}
+              {search.trim().length < 2 && filtered.length === 0 && (
+                <p className="text-[11px] text-muted-foreground text-center py-3">Digite ao menos 2 letras para buscar.</p>
               )}
             </div>
           )}
