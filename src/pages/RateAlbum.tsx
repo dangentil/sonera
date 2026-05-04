@@ -22,6 +22,14 @@ interface Album {
   cover_url: string | null;
 }
 
+interface MBResult {
+  mbid: string;
+  title: string;
+  artist: string;
+  release_year: number | null;
+  cover_url: string | null;
+}
+
 const albumSchema = z.object({
   title: z.string().trim().min(1).max(200),
   artist: z.string().trim().min(1).max(200),
@@ -70,6 +78,11 @@ const RateAlbum = () => {
   const [aGenre, setAGenre] = useState("");
   const [aCover, setACover] = useState("");
 
+  // External (MusicBrainz) search
+  const [mbResults, setMbResults] = useState<MBResult[]>([]);
+  const [mbLoading, setMbLoading] = useState(false);
+  const [importing, setImporting] = useState<string | null>(null);
+
   useEffect(() => {
     supabase.from("albums").select("*").order("created_at", { ascending: false }).limit(100)
       .then(({ data }) => setAlbums(data ?? []));
@@ -84,14 +97,87 @@ const RateAlbum = () => {
       });
   }, [user]);
 
+  // Debounced external search
+  useEffect(() => {
+    const term = search.trim();
+    if (term.length < 2) {
+      setMbResults([]);
+      setMbLoading(false);
+      return;
+    }
+    setMbLoading(true);
+    const ctrl = new AbortController();
+    const t = setTimeout(async () => {
+      try {
+        const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/musicbrainz-search?q=${encodeURIComponent(term)}`;
+        const res = await fetch(url, {
+          signal: ctrl.signal,
+          headers: { Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}` },
+        });
+        const json = await res.json();
+        if (!ctrl.signal.aborted) setMbResults(json.results ?? []);
+      } catch (_) {
+        // ignore
+      } finally {
+        if (!ctrl.signal.aborted) setMbLoading(false);
+      }
+    }, 400);
+    return () => {
+      ctrl.abort();
+      clearTimeout(t);
+    };
+  }, [search]);
+
   const filtered = search.trim()
     ? albums.filter((a) =>
         (a.title + " " + a.artist).toLowerCase().includes(search.toLowerCase())
       )
     : albums.slice(0, 8);
 
+  // Hide MB results that are already in the local catalog
+  const mbFiltered = mbResults.filter(
+    (m) => !albums.some(
+      (a) => a.title.toLowerCase() === m.title.toLowerCase()
+        && a.artist.toLowerCase() === m.artist.toLowerCase(),
+    ),
+  );
+
   const score = weightedScore(scores);
   const filledCount = Object.values(scores).filter((v) => v && v > 0).length;
+
+  const handlePickExternal = async (m: MBResult) => {
+    if (!user) return;
+    setImporting(m.mbid);
+    // Reuse if same title+artist already exists
+    const existing = albums.find(
+      (a) => a.title.toLowerCase() === m.title.toLowerCase()
+        && a.artist.toLowerCase() === m.artist.toLowerCase(),
+    );
+    if (existing) {
+      setSelectedAlbum(existing);
+      setSearch("");
+      setImporting(null);
+      return;
+    }
+    const { data, error } = await supabase
+      .from("albums")
+      .insert({
+        title: m.title,
+        artist: m.artist,
+        release_year: m.release_year,
+        cover_url: m.cover_url,
+        created_by: user.id,
+      } as any)
+      .select()
+      .single();
+    setImporting(null);
+    if (error) {
+      return toast({ title: "Erro ao importar álbum", description: error.message, variant: "destructive" });
+    }
+    setAlbums([data, ...albums]);
+    setSelectedAlbum(data);
+    setSearch("");
+  };
 
   const handleAddAlbum = async () => {
     if (!user) return;
@@ -234,8 +320,46 @@ const RateAlbum = () => {
                   ))}
                 </div>
               )}
-              {filtered.length === 0 && (
-                <p className="text-[11px] text-muted-foreground text-center py-3">Nenhum álbum encontrado. Adicione um novo.</p>
+              {search.trim().length >= 2 && (mbFiltered.length > 0 || mbLoading) && (
+                <div className="bg-card border border-border/40 rounded-xl divide-y divide-border/40 max-h-72 overflow-y-auto">
+                  <div className="px-3 py-1.5 text-[9px] uppercase tracking-wider text-muted-foreground bg-muted/20">
+                    Catálogo MusicBrainz {mbLoading && "· buscando..."}
+                  </div>
+                  {mbFiltered.map((m) => (
+                    <button
+                      key={m.mbid}
+                      onClick={() => handlePickExternal(m)}
+                      disabled={importing === m.mbid}
+                      className="w-full flex items-center gap-3 p-2.5 hover:bg-muted/40 transition-colors text-left disabled:opacity-50"
+                    >
+                      {m.cover_url ? (
+                        <img
+                          src={m.cover_url}
+                          alt=""
+                          className="w-9 h-9 rounded-md object-cover bg-muted"
+                          onError={(e) => { (e.currentTarget as HTMLImageElement).style.visibility = "hidden"; }}
+                        />
+                      ) : (
+                        <div className="w-9 h-9 rounded-md bg-muted" />
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs font-medium text-foreground truncate">{m.title}</p>
+                        <p className="text-[10px] text-muted-foreground truncate">
+                          {m.artist}{m.release_year ? ` · ${m.release_year}` : ""}
+                        </p>
+                      </div>
+                      <span className="text-[9px] uppercase tracking-wider text-accent shrink-0">
+                        {importing === m.mbid ? "..." : "Importar"}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              )}
+              {search.trim().length >= 2 && filtered.length === 0 && !mbLoading && mbFiltered.length === 0 && (
+                <p className="text-[11px] text-muted-foreground text-center py-3">Nenhum álbum encontrado.</p>
+              )}
+              {search.trim().length < 2 && filtered.length === 0 && (
+                <p className="text-[11px] text-muted-foreground text-center py-3">Digite ao menos 2 letras para buscar.</p>
               )}
             </div>
           )}
