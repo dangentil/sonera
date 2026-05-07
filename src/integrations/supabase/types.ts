@@ -259,6 +259,13 @@ export type Database = {
             referencedRelation: "albums"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "ratings_user_id_profiles_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
         ]
       }
       user_roles: {
