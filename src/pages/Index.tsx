@@ -26,8 +26,11 @@ const timeAgo = (iso: string) => {
 const Index = () => {
   const [reviews, setReviews] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [social, setSocial] = useState<Record<string, { likes: number; liked: boolean; comments: number }>>({});
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
   useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => setCurrentUserId(data.user?.id ?? null));
     (async () => {
       const { data } = await supabase
         .from("ratings")
@@ -37,11 +40,29 @@ const Index = () => {
           track_dynamics, mix_master, historical_weight, branding_storytelling,
           musicianship, bangers, emotion, creativity,
           albums(title, artist, cover_url),
-          profiles(display_name, username)
+          profiles(id, display_name, username)
         `)
         .order("created_at", { ascending: false })
         .limit(20);
-      setReviews(data ?? []);
+      const list = data ?? [];
+      setReviews(list);
+      const ids = list.map((r: any) => r.id);
+      if (ids.length) {
+        const [{ data: likes }, { data: comms }] = await Promise.all([
+          supabase.from("rating_likes").select("rating_id, user_id").in("rating_id", ids),
+          supabase.from("rating_comments").select("rating_id").in("rating_id", ids),
+        ]);
+        const { data: u } = await supabase.auth.getUser();
+        const me = u.user?.id;
+        const map: Record<string, { likes: number; liked: boolean; comments: number }> = {};
+        ids.forEach((id: string) => (map[id] = { likes: 0, liked: false, comments: 0 }));
+        (likes ?? []).forEach((l: any) => {
+          map[l.rating_id].likes += 1;
+          if (me && l.user_id === me) map[l.rating_id].liked = true;
+        });
+        (comms ?? []).forEach((c: any) => (map[c.rating_id].comments += 1));
+        setSocial(map);
+      }
       setLoading(false);
     })();
   }, []);
@@ -72,10 +93,15 @@ const Index = () => {
               {reviews.map((r, i) => {
                 const [from, to] = gradients[i % gradients.length];
                 const userName = r.profiles?.display_name ?? "Usuário";
+                const username = r.profiles?.username ?? "";
+                const s = social[r.id] ?? { likes: 0, liked: false, comments: 0 };
                 return (
                   <ReviewCard
                     key={r.id}
                     index={i}
+                    ratingId={r.id}
+                    authorId={r.profiles?.id ?? ""}
+                    authorUsername={username}
                     userName={userName}
                     userInitials={initials(userName)}
                     gradientFrom={from}
@@ -84,8 +110,9 @@ const Index = () => {
                     artistName={r.albums?.artist ?? ""}
                     rating={Number(r.weighted_score)}
                     reviewText={r.review_text ?? ""}
-                    likes={0}
-                    comments={0}
+                    initialLikes={s.likes}
+                    initialLiked={s.liked}
+                    initialComments={s.comments}
                     timeAgo={timeAgo(r.created_at)}
                     imageUrl={r.albums?.cover_url ?? "/placeholder.svg"}
                     criteria={CRITERIA.map((c) => ({
