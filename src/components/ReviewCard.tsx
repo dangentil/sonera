@@ -77,8 +77,9 @@ const ReviewCard = ({
           <h3 className="font-bold text-base md:text-lg text-foreground truncate leading-tight">{albumName}</h3>
           <p className="text-muted-foreground text-xs mb-2.5">{artistName}</p>
           <div className="flex items-baseline gap-1.5 mb-2.5">
-            <span className="text-gradient font-bold text-2xl leading-none">{rating.toFixed(1)}</span>
-            <Star className="w-4 h-4 text-accent fill-accent" />
+            <span className="text-gradient font-bold text-2xl leading-none">{rating.toFixed(2)}</span>
+            <span className="text-[10px] text-muted-foreground">/10</span>
+            <Star className="w-3.5 h-3.5 text-accent fill-accent ml-0.5" />
           </div>
           <p className="text-muted-foreground text-xs leading-relaxed line-clamp-2">{reviewText}</p>
         </div>

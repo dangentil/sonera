@@ -87,7 +87,7 @@ const Index = () => {
                     likes={0}
                     comments={0}
                     timeAgo={timeAgo(r.created_at)}
-                    imageUrl={r.albums?.cover_url ?? "https://picsum.photos/300/300?random=" + i}
+                    imageUrl={r.albums?.cover_url ?? "/placeholder.svg"}
                     criteria={CRITERIA.map((c) => ({
                       name: c.name,
                       score: Number(r[c.key] ?? 0),
