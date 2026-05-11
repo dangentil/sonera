@@ -39,18 +39,23 @@ const albumSchema = z.object({
 });
 
 const ScoreSelector = ({ value, onChange }: { value: number; onChange: (v: number) => void }) => (
-  <div className="flex gap-0.5">
-    {[2, 4, 6, 8, 10].map((v, i) => (
-      <button
-        key={v}
-        type="button"
-        onClick={() => onChange(v)}
-        className="p-0.5 transition-transform hover:scale-125 active:scale-95"
-        aria-label={`${v} de 10`}
-      >
-        <Star className={`w-5 h-5 transition-colors duration-150 ${value >= v ? "text-accent fill-accent" : "text-muted-foreground/20"}`} />
-      </button>
-    ))}
+  <div className="flex items-center gap-1.5">
+    <div className="flex gap-0.5">
+      {[2, 4, 6, 8, 10].map((v) => (
+        <button
+          key={v}
+          type="button"
+          onClick={() => onChange(v)}
+          className="p-0.5 transition-transform hover:scale-125 active:scale-95"
+          aria-label={`${v} de 10`}
+        >
+          <Star className={`w-5 h-5 transition-colors duration-150 ${value >= v ? "text-accent fill-accent" : "text-muted-foreground/20"}`} />
+        </button>
+      ))}
+    </div>
+    <span className="text-[10px] font-semibold text-muted-foreground w-8 text-right tabular-nums">
+      {value > 0 ? `${value}/10` : "—"}
+    </span>
   </div>
 );
 
@@ -374,7 +379,7 @@ const RateAlbum = () => {
             onClick={() => setMode("quick")}
             className={`flex-1 text-[11px] uppercase tracking-wider py-2 rounded-lg transition-colors ${mode === "quick" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}
           >
-            Rápida (1–5)
+            Rápida (0–10)
           </button>
           <button
             type="button"
