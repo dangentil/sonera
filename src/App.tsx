@@ -7,6 +7,7 @@ import Index from "./pages/Index.tsx";
 import RateAlbum from "./pages/RateAlbum.tsx";
 import Rankings from "./pages/Rankings.tsx";
 import Profile from "./pages/Profile.tsx";
+import UserProfile from "./pages/UserProfile.tsx";
 import Quiz from "./pages/Quiz.tsx";
 import NotFound from "./pages/NotFound.tsx";
 import Auth from "./pages/Auth.tsx";
@@ -30,6 +31,7 @@ const App = () => (
             <Route path="/rate" element={<ProtectedRoute><RateAlbum /></ProtectedRoute>} />
             <Route path="/rankings" element={<Rankings />} />
             <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+            <Route path="/u/:username" element={<UserProfile />} />
             <Route path="/quiz" element={<Quiz />} />
             <Route path="/groups" element={<Groups />} />
             <Route path="/groups/:id" element={<GroupDetail />} />
