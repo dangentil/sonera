@@ -4,6 +4,7 @@ import { Link, useLocation } from "react-router-dom";
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/hooks/useAuth";
+import NotificationsBell from "./NotificationsBell";
 
 const navLinks = [
   { label: "Feed", href: "/" },
@@ -58,9 +59,7 @@ const Header = () => {
                 <Plus className="w-3 h-3" /> Avaliar
               </Button>
             </Link>
-            <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground w-8 h-8">
-              <Search className="w-4 h-4" />
-            </Button>
+            <NotificationsBell />
             {session ? (
               <>
                 <Link to="/profile">
