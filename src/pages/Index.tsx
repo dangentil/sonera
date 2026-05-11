@@ -27,10 +27,8 @@ const Index = () => {
   const [reviews, setReviews] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [social, setSocial] = useState<Record<string, { likes: number; liked: boolean; comments: number }>>({});
-  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => setCurrentUserId(data.user?.id ?? null));
     (async () => {
       const { data } = await supabase
         .from("ratings")
