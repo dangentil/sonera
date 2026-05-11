@@ -47,6 +47,24 @@ export type Database = {
         }
         Relationships: []
       }
+      follows: {
+        Row: {
+          created_at: string
+          follower_id: string
+          following_id: string
+        }
+        Insert: {
+          created_at?: string
+          follower_id: string
+          following_id: string
+        }
+        Update: {
+          created_at?: string
+          follower_id?: string
+          following_id?: string
+        }
+        Relationships: []
+      }
       group_members: {
         Row: {
           created_at: string
@@ -115,12 +133,46 @@ export type Database = {
         }
         Relationships: []
       }
+      notifications: {
+        Row: {
+          actor_id: string
+          comment_id: string | null
+          created_at: string
+          id: string
+          rating_id: string | null
+          read_at: string | null
+          type: Database["public"]["Enums"]["notification_type"]
+          user_id: string
+        }
+        Insert: {
+          actor_id: string
+          comment_id?: string | null
+          created_at?: string
+          id?: string
+          rating_id?: string | null
+          read_at?: string | null
+          type: Database["public"]["Enums"]["notification_type"]
+          user_id: string
+        }
+        Update: {
+          actor_id?: string
+          comment_id?: string | null
+          created_at?: string
+          id?: string
+          rating_id?: string | null
+          read_at?: string | null
+          type?: Database["public"]["Enums"]["notification_type"]
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
           bio: string | null
           created_at: string
           display_name: string
+          favorite_artists: string[]
           id: string
           updated_at: string
           username: string
@@ -130,6 +182,7 @@ export type Database = {
           bio?: string | null
           created_at?: string
           display_name: string
+          favorite_artists?: string[]
           id: string
           updated_at?: string
           username: string
@@ -139,11 +192,47 @@ export type Database = {
           bio?: string | null
           created_at?: string
           display_name?: string
+          favorite_artists?: string[]
           id?: string
           updated_at?: string
           username?: string
         }
         Relationships: []
+      }
+      rating_comments: {
+        Row: {
+          body: string
+          created_at: string
+          id: string
+          rating_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          id?: string
+          rating_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          id?: string
+          rating_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rating_comments_rating_id_fkey"
+            columns: ["rating_id"]
+            isOneToOne: false
+            referencedRelation: "ratings"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       rating_groups: {
         Row: {
@@ -174,6 +263,32 @@ export type Database = {
           },
           {
             foreignKeyName: "rating_groups_rating_id_fkey"
+            columns: ["rating_id"]
+            isOneToOne: false
+            referencedRelation: "ratings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      rating_likes: {
+        Row: {
+          created_at: string
+          rating_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          rating_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          rating_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rating_likes_rating_id_fkey"
             columns: ["rating_id"]
             isOneToOne: false
             referencedRelation: "ratings"
@@ -318,6 +433,7 @@ export type Database = {
       app_role: "admin" | "user"
       group_member_role: "admin" | "member"
       group_member_status: "pending" | "approved"
+      notification_type: "follow" | "like" | "comment"
       rating_visibility: "public" | "groups"
     }
     CompositeTypes: {
@@ -449,6 +565,7 @@ export const Constants = {
       app_role: ["admin", "user"],
       group_member_role: ["admin", "member"],
       group_member_status: ["pending", "approved"],
+      notification_type: ["follow", "like", "comment"],
       rating_visibility: ["public", "groups"],
     },
   },
