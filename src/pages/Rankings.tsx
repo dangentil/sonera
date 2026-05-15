@@ -124,25 +124,29 @@ const Rankings = () => {
             {filtered.map((r, i) => (
               <motion.div key={r.album_id}
                 initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.04, duration: 0.3 }}
-                className="bg-card rounded-xl p-3.5 border border-border/40 hover:border-primary/20 transition-all duration-200 flex items-center gap-3.5 group">
-                <RankBadge rank={i + 1} />
-                <div className="w-11 h-11 rounded-lg overflow-hidden bg-muted shrink-0 shadow-sm">
-                  {r.cover_url && <img src={r.cover_url} alt={r.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" loading="lazy" />}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-foreground truncate group-hover:text-accent transition-colors">{r.title}</p>
-                  <p className="text-[11px] text-muted-foreground truncate">
-                    {r.artist}{r.genre ? ` · ${r.genre}` : ""}{r.release_year ? ` · ${r.release_year}` : ""}
-                  </p>
-                </div>
-                <div className="text-right shrink-0">
-                  <div className="flex items-center gap-1">
-                    <span className="text-sm font-bold text-primary">{r.avg_score.toFixed(2)}</span>
-                    <Star className="w-3 h-3 text-accent fill-accent" />
+                transition={{ delay: i * 0.04, duration: 0.3 }}>
+                <Link
+                  to={`/album/${r.album_id}`}
+                  className="bg-card rounded-xl p-3.5 border border-border/40 hover:border-primary/20 transition-all duration-200 flex items-center gap-3.5 group"
+                >
+                  <RankBadge rank={i + 1} />
+                  <div className="w-11 h-11 rounded-lg overflow-hidden bg-muted shrink-0 shadow-sm">
+                    {r.cover_url && <img src={r.cover_url} alt={r.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" loading="lazy" />}
                   </div>
-                  <p className="text-[10px] text-muted-foreground">{r.count} {r.count === 1 ? "review" : "reviews"}</p>
-                </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-foreground truncate group-hover:text-accent transition-colors">{r.title}</p>
+                    <p className="text-[11px] text-muted-foreground truncate">
+                      {r.artist}{r.genre ? ` · ${r.genre}` : ""}{r.release_year ? ` · ${r.release_year}` : ""}
+                    </p>
+                  </div>
+                  <div className="text-right shrink-0">
+                    <div className="flex items-center gap-1">
+                      <span className="text-sm font-bold text-primary">{r.avg_score.toFixed(2)}</span>
+                      <Star className="w-3 h-3 text-accent fill-accent" />
+                    </div>
+                    <p className="text-[10px] text-muted-foreground">{r.count} {r.count === 1 ? "review" : "reviews"}</p>
+                  </div>
+                </Link>
               </motion.div>
             ))}
           </div>

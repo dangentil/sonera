@@ -16,6 +16,7 @@ interface ReviewCardProps {
   gradientTo: string;
   albumName: string;
   artistName: string;
+  albumId?: string;
   rating: number;
   reviewText: string;
   initialLikes: number;
@@ -45,6 +46,7 @@ const ReviewCard = ({
   gradientTo,
   albumName,
   artistName,
+  albumId,
   rating,
   reviewText,
   initialLikes,
@@ -151,7 +153,11 @@ const ReviewCard = ({
           <img src={imageUrl} loading="lazy" alt={albumName} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
         </div>
         <div className="flex-1 min-w-0 py-0.5">
-          <h3 className="font-bold text-base md:text-lg text-foreground truncate leading-tight">{albumName}</h3>
+          {albumId ? (
+            <Link to={`/album/${albumId}`} className="font-bold text-base md:text-lg text-foreground truncate leading-tight hover:text-primary transition-colors block">{albumName}</Link>
+          ) : (
+            <h3 className="font-bold text-base md:text-lg text-foreground truncate leading-tight">{albumName}</h3>
+          )}
           <p className="text-muted-foreground text-xs mb-2.5">{artistName}</p>
           <div className="flex items-baseline gap-1.5 mb-2.5">
             <span className="text-gradient font-bold text-2xl leading-none">{rating.toFixed(2)}</span>

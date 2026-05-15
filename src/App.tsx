@@ -13,6 +13,7 @@ import NotFound from "./pages/NotFound.tsx";
 import Auth from "./pages/Auth.tsx";
 import Groups from "./pages/Groups.tsx";
 import GroupDetail from "./pages/GroupDetail.tsx";
+import AlbumDetail from "./pages/AlbumDetail.tsx";
 import { AuthProvider } from "./hooks/useAuth";
 import ProtectedRoute from "./components/ProtectedRoute";
 
@@ -35,6 +36,7 @@ const App = () => (
             <Route path="/quiz" element={<Quiz />} />
             <Route path="/groups" element={<Groups />} />
             <Route path="/groups/:id" element={<GroupDetail />} />
+            <Route path="/album/:id" element={<AlbumDetail />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

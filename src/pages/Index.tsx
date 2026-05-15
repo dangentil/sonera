@@ -37,7 +37,7 @@ const Index = () => {
           lyrics, personal_impact, musical_richness, authenticity, production,
           track_dynamics, mix_master, historical_weight, branding_storytelling,
           musicianship, bangers, emotion, creativity,
-          albums(title, artist, cover_url),
+          albums(id, title, artist, cover_url),
           profiles(id, display_name, username)
         `)
         .order("created_at", { ascending: false })
@@ -106,6 +106,7 @@ const Index = () => {
                     gradientTo={to}
                     albumName={r.albums?.title ?? ""}
                     artistName={r.albums?.artist ?? ""}
+                    albumId={r.albums?.id}
                     rating={Number(r.weighted_score)}
                     reviewText={r.review_text ?? ""}
                     initialLikes={s.likes}
