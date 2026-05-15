@@ -1,11 +1,13 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { Star, Music } from "lucide-react";
+import { Star, Music, BarChart3, Disc3 } from "lucide-react";
 import { motion } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { CRITERIA } from "@/lib/criteria";
 import FollowButton from "./FollowButton";
 import EditProfileDialog from "./EditProfileDialog";
+import ReviewCard from "./ReviewCard";
 
 export interface ProfileData {
   id: string;
@@ -19,8 +21,22 @@ export interface ProfileData {
 interface RatingRow {
   id: string;
   weighted_score: number;
+  review_text: string | null;
   created_at: string;
-  albums: { title: string; artist: string; cover_url: string | null } | null;
+  lyrics: number;
+  personal_impact: number;
+  musical_richness: number;
+  authenticity: number;
+  production: number;
+  track_dynamics: number;
+  mix_master: number;
+  historical_weight: number;
+  branding_storytelling: number;
+  musicianship: number;
+  bangers: number;
+  emotion: number;
+  creativity: number;
+  albums: { id: string; title: string; artist: string; cover_url: string | null } | null;
 }
 
 interface FollowRow {
@@ -29,29 +45,75 @@ interface FollowRow {
   display_name: string;
 }
 
+interface SocialRow {
+  likes: number;
+  liked: boolean;
+  comments: number;
+}
+
+const gradients = [
+  ["#e94560", "#ff6b6b"], ["#00d2ff", "#3a7bd5"], ["#11998e", "#38ef7d"],
+  ["#f7971e", "#ffd200"], ["#8e2de2", "#4a00e0"], ["#fc466b", "#3f5efb"],
+];
+
 const initials = (name: string) =>
   name.split(" ").map((n) => n[0]).slice(0, 2).join("").toUpperCase() || "U";
 
-type Tab = "ratings" | "followers" | "following";
+const timeAgo = (iso: string) => {
+  const diff = (Date.now() - new Date(iso).getTime()) / 1000;
+  if (diff < 60) return "agora";
+  if (diff < 3600) return `há ${Math.floor(diff / 60)} min`;
+  if (diff < 86400) return `há ${Math.floor(diff / 3600)} h`;
+  return `há ${Math.floor(diff / 86400)} d`;
+};
+
+type Tab = "ratings" | "albums" | "followers" | "following";
 
 const ProfileView = ({ profile, onProfileUpdate }: { profile: ProfileData; onProfileUpdate?: (p: ProfileData) => void }) => {
   const { user } = useAuth();
   const isMe = user?.id === profile.id;
   const [ratings, setRatings] = useState<RatingRow[]>([]);
+  const [social, setSocial] = useState<Record<string, SocialRow>>({});
   const [followers, setFollowers] = useState<FollowRow[]>([]);
   const [following, setFollowing] = useState<FollowRow[]>([]);
   const [counts, setCounts] = useState({ followers: 0, following: 0 });
   const [tab, setTab] = useState<Tab>("ratings");
 
   useEffect(() => {
-    supabase
-      .from("ratings")
-      .select("id, weighted_score, created_at, albums(title, artist, cover_url)")
-      .eq("user_id", profile.id)
-      .order("created_at", { ascending: false })
-      .then(({ data }) => setRatings((data as any) ?? []));
-
     (async () => {
+      const { data } = await supabase
+        .from("ratings")
+        .select(`
+          id, weighted_score, review_text, created_at,
+          lyrics, personal_impact, musical_richness, authenticity, production,
+          track_dynamics, mix_master, historical_weight, branding_storytelling,
+          musicianship, bangers, emotion, creativity,
+          albums(id, title, artist, cover_url)
+        `)
+        .eq("user_id", profile.id)
+        .order("created_at", { ascending: false });
+
+      const list = (data as any[]) ?? [];
+      setRatings(list);
+
+      const ids = list.map((r) => r.id);
+      if (ids.length) {
+        const [{ data: likes }, { data: comms }] = await Promise.all([
+          supabase.from("rating_likes").select("rating_id, user_id").in("rating_id", ids),
+          supabase.from("rating_comments").select("rating_id").in("rating_id", ids),
+        ]);
+        const { data: u } = await supabase.auth.getUser();
+        const me = u.user?.id;
+        const map: Record<string, SocialRow> = {};
+        ids.forEach((id: string) => (map[id] = { likes: 0, liked: false, comments: 0 }));
+        (likes ?? []).forEach((l: any) => {
+          map[l.rating_id].likes += 1;
+          if (me && l.user_id === me) map[l.rating_id].liked = true;
+        });
+        (comms ?? []).forEach((c: any) => (map[c.rating_id].comments += 1));
+        setSocial(map);
+      }
+
       const [{ count: fCount }, { count: gCount }] = await Promise.all([
         supabase.from("follows").select("*", { count: "exact", head: true }).eq("following_id", profile.id),
         supabase.from("follows").select("*", { count: "exact", head: true }).eq("follower_id", profile.id),
@@ -92,8 +154,24 @@ const ProfileView = ({ profile, onProfileUpdate }: { profile: ProfileData; onPro
 
   const joined = new Date(profile.created_at).toLocaleDateString("pt-BR", { month: "short", year: "numeric" });
 
+  const avgScore = ratings.length
+    ? ratings.reduce((s, r) => s + Number(r.weighted_score), 0) / ratings.length
+    : null;
+
+  const bestRated = ratings.length
+    ? ratings.reduce((best, r) => (Number(r.weighted_score) > Number(best.weighted_score) ? r : best), ratings[0])
+    : null;
+
+  const tabs: { key: Tab; label: string }[] = [
+    { key: "ratings", label: "Avaliações" },
+    { key: "albums", label: "Álbuns" },
+    { key: "followers", label: "Seguidores" },
+    { key: "following", label: "Seguindo" },
+  ];
+
   return (
     <main className="container mx-auto px-4 md:px-8 py-6 md:py-8 max-w-3xl">
+      {/* Profile header */}
       <motion.div
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
@@ -158,48 +236,148 @@ const ProfileView = ({ profile, onProfileUpdate }: { profile: ProfileData; onPro
         )}
       </motion.div>
 
+      {/* Stats */}
+      {ratings.length > 0 && (
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, delay: 0.1 }}
+          className="grid grid-cols-3 gap-3 mb-5"
+        >
+          <div className="bg-card border border-border/60 rounded-xl p-4 text-center">
+            <BarChart3 className="w-4 h-4 text-muted-foreground mx-auto mb-1.5" />
+            <p className="text-xl font-bold text-foreground">{ratings.length}</p>
+            <p className="text-[10px] text-muted-foreground uppercase tracking-wider mt-0.5">Avaliações</p>
+          </div>
+          <div className="bg-card border border-border/60 rounded-xl p-4 text-center">
+            <Star className="w-4 h-4 text-accent fill-accent mx-auto mb-1.5" />
+            <p className="text-xl font-bold text-gradient">{avgScore?.toFixed(2) ?? "—"}</p>
+            <p className="text-[10px] text-muted-foreground uppercase tracking-wider mt-0.5">Média</p>
+          </div>
+          <div className="bg-card border border-border/60 rounded-xl p-4 text-center overflow-hidden">
+            <Disc3 className="w-4 h-4 text-muted-foreground mx-auto mb-1.5" />
+            {bestRated?.albums ? (
+              <Link to={`/album/${bestRated.albums.id}`} className="block">
+                <p className="text-xs font-bold text-foreground truncate hover:text-primary transition-colors">{bestRated.albums.title}</p>
+                <p className="text-[10px] text-accent font-semibold mt-0.5">{Number(bestRated.weighted_score).toFixed(2)}</p>
+              </Link>
+            ) : (
+              <p className="text-xs text-muted-foreground">—</p>
+            )}
+            <p className="text-[10px] text-muted-foreground uppercase tracking-wider mt-0.5">Melhor</p>
+          </div>
+        </motion.div>
+      )}
+
       {/* Tabs */}
       <div className="flex gap-1 mb-4 border-b border-border/40">
-        {(["ratings", "followers", "following"] as Tab[]).map((t) => (
+        {tabs.map((t) => (
           <button
-            key={t}
-            onClick={() => setTab(t)}
+            key={t.key}
+            onClick={() => setTab(t.key)}
             className={`px-4 py-2 text-[11px] uppercase tracking-wider border-b-2 transition-colors ${
-              tab === t ? "border-primary text-foreground" : "border-transparent text-muted-foreground hover:text-foreground"
+              tab === t.key ? "border-primary text-foreground" : "border-transparent text-muted-foreground hover:text-foreground"
             }`}
           >
-            {t === "ratings" ? "Avaliações" : t === "followers" ? "Seguidores" : "Seguindo"}
+            {t.label}
           </button>
         ))}
       </div>
 
-      <div className="bg-card rounded-2xl p-5 border border-border/60">
-        {tab === "ratings" && (
-          ratings.length === 0 ? (
+      {/* Tab content */}
+      {tab === "ratings" && (
+        ratings.length === 0 ? (
+          <div className="bg-card rounded-2xl p-5 border border-border/60">
             <p className="text-xs text-muted-foreground text-center py-6">Nenhuma avaliação ainda.</p>
+          </div>
+        ) : (
+          <div className="space-y-5">
+            {ratings.map((r, i) => {
+              const [from, to] = gradients[i % gradients.length];
+              const s = social[r.id] ?? { likes: 0, liked: false, comments: 0 };
+              return (
+                <ReviewCard
+                  key={r.id}
+                  index={i}
+                  ratingId={r.id}
+                  authorId={profile.id}
+                  authorUsername={profile.username}
+                  userName={profile.display_name}
+                  userInitials={initials(profile.display_name)}
+                  gradientFrom={from}
+                  gradientTo={to}
+                  albumName={r.albums?.title ?? ""}
+                  artistName={r.albums?.artist ?? ""}
+                  albumId={r.albums?.id}
+                  rating={Number(r.weighted_score)}
+                  reviewText={r.review_text ?? ""}
+                  initialLikes={s.likes}
+                  initialLiked={s.liked}
+                  initialComments={s.comments}
+                  timeAgo={timeAgo(r.created_at)}
+                  imageUrl={r.albums?.cover_url ?? "/placeholder.svg"}
+                  criteria={CRITERIA.map((c) => ({
+                    name: c.name,
+                    score: Number((r as any)[c.key] ?? 0),
+                    weight: c.weight,
+                  }))}
+                />
+              );
+            })}
+          </div>
+        )
+      )}
+
+      {tab === "albums" && (
+        <div className="bg-card rounded-2xl p-5 border border-border/60">
+          {ratings.length === 0 ? (
+            <p className="text-xs text-muted-foreground text-center py-6">Nenhum álbum avaliado ainda.</p>
           ) : (
-            <div className="space-y-2">
+            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3">
               {ratings.map((r) => (
-                <div key={r.id} className="flex items-center gap-3 group hover:bg-muted/20 rounded-lg p-2 -mx-2 transition-colors">
-                  <div className="w-10 h-10 rounded-lg overflow-hidden bg-muted shrink-0">
-                    {r.albums?.cover_url && <img src={r.albums.cover_url} alt={r.albums.title} className="w-full h-full object-cover" />}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-xs font-medium text-foreground truncate">{r.albums?.title}</p>
-                    <p className="text-[10px] text-muted-foreground">{r.albums?.artist}</p>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <span className="text-xs font-bold text-primary">{Number(r.weighted_score).toFixed(2)}</span>
-                    <Star className="w-3 h-3 text-accent fill-accent" />
-                  </div>
-                </div>
+                r.albums && (
+                  <Link
+                    key={r.id}
+                    to={`/album/${r.albums.id}`}
+                    className="group block"
+                  >
+                    <div className="aspect-square rounded-lg overflow-hidden bg-muted mb-1.5 shadow-md group-hover:shadow-primary/20 transition-shadow duration-300">
+                      {r.albums.cover_url ? (
+                        <img
+                          src={r.albums.cover_url}
+                          alt={r.albums.title}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center">
+                          <Disc3 className="w-6 h-6 text-muted-foreground" />
+                        </div>
+                      )}
+                    </div>
+                    <p className="text-[10px] font-medium text-foreground truncate group-hover:text-primary transition-colors">{r.albums.title}</p>
+                    <p className="text-[9px] text-muted-foreground truncate">{r.albums.artist}</p>
+                    <div className="flex items-center gap-0.5 mt-0.5">
+                      <span className="text-[10px] font-bold text-primary">{Number(r.weighted_score).toFixed(1)}</span>
+                      <Star className="w-2.5 h-2.5 text-accent fill-accent" />
+                    </div>
+                  </Link>
+                )
               ))}
             </div>
-          )
-        )}
-        {tab === "followers" && <UserList list={followers} emptyText="Sem seguidores ainda." />}
-        {tab === "following" && <UserList list={following} emptyText="Não segue ninguém ainda." />}
-      </div>
+          )}
+        </div>
+      )}
+
+      {tab === "followers" && (
+        <div className="bg-card rounded-2xl p-5 border border-border/60">
+          <UserList list={followers} emptyText="Sem seguidores ainda." />
+        </div>
+      )}
+      {tab === "following" && (
+        <div className="bg-card rounded-2xl p-5 border border-border/60">
+          <UserList list={following} emptyText="Não segue ninguém ainda." />
+        </div>
+      )}
     </main>
   );
 };

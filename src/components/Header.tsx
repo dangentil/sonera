@@ -1,10 +1,11 @@
-import { User, Plus, Menu, X, LogOut, LogIn } from "lucide-react";
+import { User, Plus, Menu, X, LogOut, LogIn, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link, useLocation } from "react-router-dom";
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/hooks/useAuth";
 import NotificationsBell from "./NotificationsBell";
+import SearchDialog from "./SearchDialog";
 
 const navLinks = [
   { label: "Feed", href: "/" },
@@ -16,6 +17,7 @@ const navLinks = [
 const Header = () => {
   const location = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
   const { session, signOut } = useAuth();
 
   return (
@@ -54,6 +56,15 @@ const Header = () => {
             </nav>
           </div>
           <div className="flex items-center gap-1">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="text-muted-foreground hover:text-foreground w-8 h-8"
+              onClick={() => setSearchOpen(true)}
+              title="Buscar"
+            >
+              <Search className="w-4 h-4" />
+            </Button>
             <Link to={session ? "/rate" : "/auth"} className="hidden sm:inline-flex">
               <Button size="sm" className="text-[10px] tracking-[0.15em] uppercase gap-1.5 h-8 px-3 rounded-lg">
                 <Plus className="w-3 h-3" /> Avaliar
@@ -89,6 +100,8 @@ const Header = () => {
           </div>
         </div>
       </header>
+
+      <SearchDialog open={searchOpen} onClose={() => setSearchOpen(false)} />
 
       {/* Mobile menu */}
       <AnimatePresence>
