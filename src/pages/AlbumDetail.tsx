@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Star, ArrowLeft, Disc3 } from "lucide-react";
+import { Star, ArrowLeft, Disc3, Users } from "lucide-react";
 import Header from "@/components/Header";
 import ReviewCard from "@/components/ReviewCard";
 import { Skeleton } from "@/components/ui/skeleton";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 import { CRITERIA } from "@/lib/criteria";
 
 const gradients = [
@@ -43,14 +44,16 @@ interface Rating {
   authenticity: number; production: number; track_dynamics: number;
   mix_master: number; historical_weight: number; branding_storytelling: number;
   musicianship: number; bangers: number; emotion: number; creativity: number;
-  profiles: { id: string; display_name: string | null; username: string | null } | null;
+  profiles: { id: string; display_name: string | null; username: string | null; avatar_url: string | null } | null;
 }
 
 const AlbumDetail = () => {
   const { id } = useParams<{ id: string }>();
+  const { user } = useAuth();
   const [album, setAlbum] = useState<Album | null>(null);
   const [ratings, setRatings] = useState<Rating[]>([]);
   const [social, setSocial] = useState<Record<string, { likes: number; liked: boolean; comments: number }>>({});
+  const [friendIds, setFriendIds] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
 
@@ -65,7 +68,7 @@ const AlbumDetail = () => {
           lyrics, personal_impact, musical_richness, authenticity, production,
           track_dynamics, mix_master, historical_weight, branding_storytelling,
           musicianship, bangers, emotion, creativity,
-          profiles(id, display_name, username)
+          profiles(id, display_name, username, avatar_url)
         `).eq("album_id", id).order("created_at", { ascending: false }),
       ]);
 
@@ -92,9 +95,18 @@ const AlbumDetail = () => {
         (comms ?? []).forEach((c: any) => (map[c.rating_id].comments += 1));
         setSocial(map);
       }
+
+      if (user) {
+        const { data: followData } = await supabase
+          .from("follows")
+          .select("following_id")
+          .eq("follower_id", user.id);
+        setFriendIds(new Set((followData ?? []).map((f: any) => f.following_id)));
+      }
+
       setLoading(false);
     })();
-  }, [id]);
+  }, [id, user?.id]);
 
   const avgScore = useMemo(() => {
     if (!ratings.length) return null;
@@ -108,6 +120,51 @@ const AlbumDetail = () => {
       return { ...c, avg };
     }).sort((a, b) => b.avg - a.avg);
   }, [ratings]);
+
+  const friendRatings = useMemo(
+    () => ratings.filter((r) => friendIds.has(r.user_id)),
+    [ratings, friendIds]
+  );
+  const communityRatings = useMemo(
+    () => ratings.filter((r) => !friendIds.has(r.user_id)),
+    [ratings, friendIds]
+  );
+
+  const renderCard = (r: Rating, i: number) => {
+    const [from, to] = gradients[i % gradients.length];
+    const userName = r.profiles?.display_name ?? "Usuário";
+    const username = r.profiles?.username ?? "";
+    const s = social[r.id] ?? { likes: 0, liked: false, comments: 0 };
+    return (
+      <ReviewCard
+        key={r.id}
+        index={i}
+        ratingId={r.id}
+        authorId={r.profiles?.id ?? ""}
+        authorUsername={username}
+        userName={userName}
+        userInitials={initials(userName)}
+        avatarUrl={r.profiles?.avatar_url}
+        gradientFrom={from}
+        gradientTo={to}
+        albumName={album!.title}
+        artistName={album!.artist}
+        albumId={album!.id}
+        rating={Number(r.weighted_score)}
+        reviewText={r.review_text ?? ""}
+        initialLikes={s.likes}
+        initialLiked={s.liked}
+        initialComments={s.comments}
+        timeAgo={timeAgo(r.created_at)}
+        imageUrl={album!.cover_url ?? "/placeholder.svg"}
+        criteria={CRITERIA.map((c) => ({
+          name: c.name,
+          score: Number((r as any)[c.key] ?? 0),
+          weight: c.weight,
+        }))}
+      />
+    );
+  };
 
   if (loading) return (
     <div className="min-h-screen bg-background pb-20 md:pb-0">
@@ -145,7 +202,6 @@ const AlbumDetail = () => {
     <div className="min-h-screen bg-background pb-20 md:pb-0">
       <Header />
       <main className="container mx-auto px-4 md:px-8 py-6 md:py-8 max-w-4xl">
-        {/* Back */}
         <Link to="/rankings" className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors mb-5">
           <ArrowLeft className="w-3.5 h-3.5" />
           Rankings
@@ -226,10 +282,6 @@ const AlbumDetail = () => {
         )}
 
         {/* Reviews */}
-        <h2 className="text-sm font-semibold text-foreground mb-4">
-          Avaliações{ratings.length > 0 && <span className="text-muted-foreground font-normal ml-1">({ratings.length})</span>}
-        </h2>
-
         {ratings.length === 0 ? (
           <div className="bg-card border border-border/40 rounded-2xl p-8 text-center">
             <p className="text-sm text-muted-foreground mb-4">Nenhuma avaliação para este álbum ainda.</p>
@@ -238,42 +290,40 @@ const AlbumDetail = () => {
             </Link>
           </div>
         ) : (
-          <div className="space-y-5">
-            {ratings.map((r, i) => {
-              const [from, to] = gradients[i % gradients.length];
-              const userName = r.profiles?.display_name ?? "Usuário";
-              const username = r.profiles?.username ?? "";
-              const s = social[r.id] ?? { likes: 0, liked: false, comments: 0 };
-              return (
-                <ReviewCard
-                  key={r.id}
-                  index={i}
-                  ratingId={r.id}
-                  authorId={r.profiles?.id ?? ""}
-                  authorUsername={username}
-                  userName={userName}
-                  userInitials={initials(userName)}
-                  gradientFrom={from}
-                  gradientTo={to}
-                  albumName={album.title}
-                  artistName={album.artist}
-                  albumId={album.id}
-                  rating={Number(r.weighted_score)}
-                  reviewText={r.review_text ?? ""}
-                  initialLikes={s.likes}
-                  initialLiked={s.liked}
-                  initialComments={s.comments}
-                  timeAgo={timeAgo(r.created_at)}
-                  imageUrl={album.cover_url ?? "/placeholder.svg"}
-                  criteria={CRITERIA.map((c) => ({
-                    name: c.name,
-                    score: Number((r as any)[c.key] ?? 0),
-                    weight: c.weight,
-                  }))}
-                />
-              );
-            })}
-          </div>
+          <>
+            {/* Friends section */}
+            {friendRatings.length > 0 && (
+              <div className="mb-7">
+                <div className="flex items-center gap-2 mb-4">
+                  <Users className="w-3.5 h-3.5 text-accent" />
+                  <h2 className="text-sm font-semibold text-foreground">
+                    Amigos{" "}
+                    <span className="text-muted-foreground font-normal">({friendRatings.length})</span>
+                  </h2>
+                </div>
+                <div className="space-y-5">
+                  {friendRatings.map((r, i) => renderCard(r, i))}
+                </div>
+              </div>
+            )}
+
+            {/* Community section */}
+            <div>
+              <h2 className="text-sm font-semibold text-foreground mb-4">
+                {friendRatings.length > 0 ? "Comunidade" : "Avaliações"}
+                {communityRatings.length > 0 && (
+                  <span className="text-muted-foreground font-normal ml-1">({communityRatings.length})</span>
+                )}
+              </h2>
+              {communityRatings.length === 0 ? (
+                <p className="text-xs text-muted-foreground">Nenhuma avaliação da comunidade ainda.</p>
+              ) : (
+                <div className="space-y-5">
+                  {communityRatings.map((r, i) => renderCard(r, friendRatings.length + i))}
+                </div>
+              )}
+            </div>
+          </>
         )}
       </main>
     </div>

@@ -46,6 +46,16 @@ const FollowButton = ({ targetUserId, onChange, size = "sm" }: Props) => {
       setFollowing(!next);
       onChange?.(!next);
       toast.error("Não foi possível atualizar");
+      setBusy(false);
+      return;
+    }
+    if (next) {
+      supabase.from("notifications").insert({
+        user_id: targetUserId,
+        actor_id: user.id,
+        type: "follow" as const,
+        rating_id: null,
+      }).then();
     }
     setBusy(false);
   };

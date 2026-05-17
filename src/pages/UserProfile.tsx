@@ -13,7 +13,7 @@ const UserProfile = () => {
     if (!username) return;
     supabase
       .from("profiles")
-      .select("id, username, display_name, bio, favorite_artists, created_at")
+      .select("id, username, display_name, bio, favorite_artists, created_at, avatar_url")
       .eq("username", username)
       .maybeSingle()
       .then(({ data }) => {

@@ -1,4 +1,4 @@
-import { Heart, MessageCircle, Share2, Star, ChevronDown, Send } from "lucide-react";
+import { Heart, MessageCircle, Share2, Star, ChevronDown, Send, MoreHorizontal, Pencil, Trash2 } from "lucide-react";
 import { motion } from "framer-motion";
 import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
@@ -7,6 +7,31 @@ import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
 
 interface ReviewCardProps {
   ratingId: string;
@@ -14,6 +39,7 @@ interface ReviewCardProps {
   authorUsername: string;
   userName: string;
   userInitials: string;
+  avatarUrl?: string | null;
   gradientFrom: string;
   gradientTo: string;
   albumName: string;
@@ -55,6 +81,7 @@ const ReviewCard = ({
   authorUsername,
   userName,
   userInitials,
+  avatarUrl,
   gradientFrom,
   gradientTo,
   albumName,
@@ -82,6 +109,16 @@ const ReviewCard = ({
   const [busy, setBusy] = useState(false);
   const [loaded, setLoaded] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
+
+  const [deleted, setDeleted] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [deleteBusy, setDeleteBusy] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [editText, setEditText] = useState(reviewText);
+  const [editScore, setEditScore] = useState(rating);
+  const [currentText, setCurrentText] = useState(reviewText);
+  const [currentScore, setCurrentScore] = useState(rating);
+  const [editBusy, setEditBusy] = useState(false);
 
   useEffect(() => {
     if (!sheetOpen || loaded) return;
@@ -124,6 +161,15 @@ const ReviewCard = ({
       setLiked(!next);
       setLikeCount((c) => c + (next ? -1 : 1));
       toast.error("Não foi possível curtir");
+      return;
+    }
+    if (next && authorId && user.id !== authorId) {
+      supabase.from("notifications").insert({
+        user_id: authorId,
+        actor_id: user.id,
+        type: "like" as const,
+        rating_id: ratingId,
+      }).then();
     }
   };
 
@@ -149,7 +195,44 @@ const ReviewCard = ({
     setComments((prev) => [...prev, newComment]);
     setCommentCount((c) => c + 1);
     setCommentBody("");
+    if (authorId && user.id !== authorId) {
+      supabase.from("notifications").insert({
+        user_id: authorId,
+        actor_id: user.id,
+        type: "comment" as const,
+        rating_id: ratingId,
+      }).then();
+    }
   };
+
+  const handleDelete = async () => {
+    setDeleteBusy(true);
+    const { error } = await supabase.from("ratings").delete().eq("id", ratingId);
+    setDeleteBusy(false);
+    if (error) return toast.error("Não foi possível excluir");
+    setDeleteDialogOpen(false);
+    setDeleted(true);
+    toast.success("Avaliação excluída");
+  };
+
+  const handleEdit = async () => {
+    if (editScore < 0 || editScore > 10) return toast.error("Nota deve estar entre 0 e 10");
+    setEditBusy(true);
+    const { error } = await supabase
+      .from("ratings")
+      .update({ review_text: editText.trim() || null, weighted_score: editScore })
+      .eq("id", ratingId);
+    setEditBusy(false);
+    if (error) return toast.error("Não foi possível salvar");
+    setCurrentText(editText.trim());
+    setCurrentScore(editScore);
+    setEditDialogOpen(false);
+    toast.success("Avaliação atualizada");
+  };
+
+  if (deleted) return null;
+
+  const isAuthor = user?.id === authorId;
 
   return (
     <>
@@ -162,20 +245,56 @@ const ReviewCard = ({
         {/* User info */}
         <div className="flex items-center gap-3 mb-4">
           <Link to={`/u/${authorUsername}`} className="flex items-center gap-3 flex-1 min-w-0 hover:opacity-80 transition-opacity">
-            <div
-              className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold text-primary-foreground shrink-0"
-              style={{ background: `linear-gradient(135deg, ${gradientFrom}, ${gradientTo})` }}
-            >
-              {userInitials}
+            <div className="w-9 h-9 rounded-full overflow-hidden shrink-0">
+              {avatarUrl ? (
+                <img src={avatarUrl} alt={userName} className="w-full h-full object-cover" />
+              ) : (
+                <div
+                  className="w-full h-full flex items-center justify-center text-xs font-bold text-primary-foreground"
+                  style={{ background: `linear-gradient(135deg, ${gradientFrom}, ${gradientTo})` }}
+                >
+                  {userInitials}
+                </div>
+              )}
             </div>
             <div className="flex-1 min-w-0">
               <p className="font-medium text-foreground text-sm truncate hover:text-primary transition-colors">{userName}</p>
               <p className="text-[11px] text-muted-foreground">{timeAgo}</p>
             </div>
           </Link>
-          <button className="text-muted-foreground/40 hover:text-muted-foreground transition-colors">
-            <Share2 className="w-3.5 h-3.5" />
-          </button>
+          <div className="flex items-center gap-1 shrink-0">
+            <button className="text-muted-foreground/40 hover:text-muted-foreground transition-colors p-1">
+              <Share2 className="w-3.5 h-3.5" />
+            </button>
+            {isAuthor && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button className="text-muted-foreground/40 hover:text-muted-foreground transition-colors p-1">
+                    <MoreHorizontal className="w-3.5 h-3.5" />
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-44">
+                  <DropdownMenuItem
+                    onClick={() => {
+                      setEditText(currentText);
+                      setEditScore(currentScore);
+                      setEditDialogOpen(true);
+                    }}
+                  >
+                    <Pencil className="w-3.5 h-3.5 mr-2" />
+                    Editar review
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => setDeleteDialogOpen(true)}
+                    className="text-destructive focus:text-destructive"
+                  >
+                    <Trash2 className="w-3.5 h-3.5 mr-2" />
+                    Excluir review
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
+          </div>
         </div>
 
         {/* Album info */}
@@ -191,11 +310,11 @@ const ReviewCard = ({
             )}
             <p className="text-muted-foreground text-xs mb-2.5">{artistName}</p>
             <div className="flex items-baseline gap-1.5 mb-2.5">
-              <span className="text-gradient font-bold text-2xl leading-none">{rating.toFixed(2)}</span>
+              <span className="text-gradient font-bold text-2xl leading-none">{currentScore.toFixed(2)}</span>
               <span className="text-[10px] text-muted-foreground">/10</span>
               <Star className="w-3.5 h-3.5 text-accent fill-accent ml-0.5" />
             </div>
-            <p className="text-muted-foreground text-xs leading-relaxed line-clamp-2">{reviewText}</p>
+            <p className="text-muted-foreground text-xs leading-relaxed line-clamp-2">{currentText}</p>
           </div>
         </div>
 
@@ -265,8 +384,14 @@ const ReviewCard = ({
               )}
               {comments.map((c) => (
                 <div key={c.id} className="flex gap-3">
-                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center text-[10px] font-bold text-primary-foreground shrink-0">
-                    {c.author?.display_name ? initials(c.author.display_name) : "U"}
+                  <div className="w-8 h-8 rounded-full overflow-hidden shrink-0">
+                    {c.author?.avatar_url ? (
+                      <img src={c.author.avatar_url} alt={c.author.display_name} className="w-full h-full object-cover" />
+                    ) : (
+                      <div className="w-full h-full bg-gradient-to-br from-primary to-accent flex items-center justify-center text-[10px] font-bold text-primary-foreground">
+                        {c.author?.display_name ? initials(c.author.display_name) : "U"}
+                      </div>
+                    )}
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-baseline gap-2 mb-0.5">
@@ -287,7 +412,6 @@ const ReviewCard = ({
             </div>
           </ScrollArea>
 
-          {/* Comment input */}
           <div className="px-5 py-4 border-t border-border/40 shrink-0">
             {user ? (
               <div className="flex gap-2">
@@ -322,6 +446,73 @@ const ReviewCard = ({
           </div>
         </SheetContent>
       </Sheet>
+
+      {/* Delete confirmation */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir avaliação</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza? Esta ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleteBusy}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDelete}
+              disabled={deleteBusy}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deleteBusy ? "Excluindo..." : "Excluir"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Edit dialog */}
+      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Editar avaliação</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <label className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1.5 block">
+                Nota (0–10)
+              </label>
+              <input
+                type="number"
+                min={0}
+                max={10}
+                step={0.1}
+                value={editScore}
+                onChange={(e) => setEditScore(Number(e.target.value))}
+                className="w-full bg-muted/30 border border-border/40 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-primary/40"
+              />
+            </div>
+            <div>
+              <label className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1.5 block">
+                Texto da review
+              </label>
+              <Textarea
+                value={editText}
+                onChange={(e) => setEditText(e.target.value)}
+                maxLength={2000}
+                className="min-h-[100px]"
+                placeholder="Escreva sua review..."
+              />
+            </div>
+          </div>
+          <DialogFooter className="mt-4">
+            <Button variant="outline" onClick={() => setEditDialogOpen(false)} disabled={editBusy}>
+              Cancelar
+            </Button>
+            <Button onClick={handleEdit} disabled={editBusy}>
+              {editBusy ? "Salvando..." : "Salvar"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 };

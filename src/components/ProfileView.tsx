@@ -16,6 +16,7 @@ export interface ProfileData {
   bio: string | null;
   favorite_artists: string[];
   created_at: string;
+  avatar_url: string | null;
 }
 
 interface RatingRow {
@@ -43,6 +44,7 @@ interface FollowRow {
   id: string;
   username: string;
   display_name: string;
+  avatar_url: string | null;
 }
 
 interface SocialRow {
@@ -136,7 +138,10 @@ const ProfileView = ({ profile, onProfileUpdate }: { profile: ProfileData; onPro
       .limit(50);
     const ids = (data ?? []).map((r: any) => r.follower_id);
     if (!ids.length) return setFollowers([]);
-    const { data: profs } = await supabase.from("profiles").select("id, username, display_name").in("id", ids);
+    const { data: profs } = await supabase
+      .from("profiles")
+      .select("id, username, display_name, avatar_url")
+      .in("id", ids);
     setFollowers((profs ?? []) as any);
   };
 
@@ -148,7 +153,10 @@ const ProfileView = ({ profile, onProfileUpdate }: { profile: ProfileData; onPro
       .limit(50);
     const ids = (data ?? []).map((r: any) => r.following_id);
     if (!ids.length) return setFollowing([]);
-    const { data: profs } = await supabase.from("profiles").select("id, username, display_name").in("id", ids);
+    const { data: profs } = await supabase
+      .from("profiles")
+      .select("id, username, display_name, avatar_url")
+      .in("id", ids);
     setFollowing((profs ?? []) as any);
   };
 
@@ -179,8 +187,18 @@ const ProfileView = ({ profile, onProfileUpdate }: { profile: ProfileData; onPro
         className="bg-card rounded-2xl p-5 md:p-6 border border-border/60 mb-5"
       >
         <div className="flex items-start gap-4">
-          <div className="w-16 h-16 md:w-20 md:h-20 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center text-xl md:text-2xl font-bold text-primary-foreground shrink-0">
-            {initials(profile.display_name)}
+          <div className="w-16 h-16 md:w-20 md:h-20 rounded-full overflow-hidden shrink-0">
+            {profile.avatar_url ? (
+              <img
+                src={profile.avatar_url}
+                alt={profile.display_name}
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <div className="w-full h-full bg-gradient-to-br from-primary to-accent flex items-center justify-center text-xl md:text-2xl font-bold text-primary-foreground">
+                {initials(profile.display_name)}
+              </div>
+            )}
           </div>
           <div className="flex-1 min-w-0">
             <div className="flex items-start justify-between gap-2">
@@ -190,9 +208,20 @@ const ProfileView = ({ profile, onProfileUpdate }: { profile: ProfileData; onPro
               </div>
               {isMe ? (
                 <EditProfileDialog
-                  initial={{ display_name: profile.display_name, bio: profile.bio, favorite_artists: profile.favorite_artists }}
+                  initial={{
+                    display_name: profile.display_name,
+                    bio: profile.bio,
+                    favorite_artists: profile.favorite_artists,
+                    avatar_url: profile.avatar_url,
+                  }}
                   onSaved={(next) =>
-                    onProfileUpdate?.({ ...profile, display_name: next.display_name, bio: next.bio || null, favorite_artists: next.favorite_artists })
+                    onProfileUpdate?.({
+                      ...profile,
+                      display_name: next.display_name,
+                      bio: next.bio || null,
+                      favorite_artists: next.favorite_artists,
+                      avatar_url: next.avatar_url ?? profile.avatar_url,
+                    })
                   }
                 />
               ) : (
@@ -304,6 +333,7 @@ const ProfileView = ({ profile, onProfileUpdate }: { profile: ProfileData; onPro
                   authorUsername={profile.username}
                   userName={profile.display_name}
                   userInitials={initials(profile.display_name)}
+                  avatarUrl={profile.avatar_url}
                   gradientFrom={from}
                   gradientTo={to}
                   albumName={r.albums?.title ?? ""}
@@ -383,6 +413,9 @@ const ProfileView = ({ profile, onProfileUpdate }: { profile: ProfileData; onPro
 };
 
 const UserList = ({ list, emptyText }: { list: FollowRow[]; emptyText: string }) => {
+  const initials = (name: string) =>
+    name.split(" ").map((n) => n[0]).slice(0, 2).join("").toUpperCase() || "U";
+
   if (list.length === 0) return <p className="text-xs text-muted-foreground text-center py-6">{emptyText}</p>;
   return (
     <div className="space-y-2">
@@ -392,8 +425,14 @@ const UserList = ({ list, emptyText }: { list: FollowRow[]; emptyText: string })
           to={`/u/${u.username}`}
           className="flex items-center gap-3 hover:bg-muted/20 rounded-lg p-2 -mx-2 transition-colors"
         >
-          <div className="w-9 h-9 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center text-[11px] font-bold text-primary-foreground shrink-0">
-            {initials(u.display_name)}
+          <div className="w-9 h-9 rounded-full overflow-hidden shrink-0">
+            {u.avatar_url ? (
+              <img src={u.avatar_url} alt={u.display_name} className="w-full h-full object-cover" />
+            ) : (
+              <div className="w-full h-full bg-gradient-to-br from-primary to-accent flex items-center justify-center text-[11px] font-bold text-primary-foreground">
+                {initials(u.display_name)}
+              </div>
+            )}
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-xs font-medium text-foreground truncate">{u.display_name}</p>
