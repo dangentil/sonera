@@ -6,6 +6,7 @@ import { motion } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 
 const periods = ["Todos", "2020s", "2010s", "2000s", "90s", "80s", "Clássicos"];
+const PAGE_SIZE = 20;
 
 interface RankRow {
   album_id: string;
@@ -41,6 +42,7 @@ const Rankings = () => {
   const [loading, setLoading] = useState(true);
   const [activeGenre, setActiveGenre] = useState("Geral");
   const [activePeriod, setActivePeriod] = useState("Todos");
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
 
   useEffect(() => {
     (async () => {
@@ -80,6 +82,11 @@ const Rankings = () => {
     (activeGenre === "Geral" || r.genre === activeGenre) && inPeriod(r.release_year, activePeriod)
   );
 
+  const visible = filtered.slice(0, visibleCount);
+
+  const handleGenre = (g: string) => { setActiveGenre(g); setVisibleCount(PAGE_SIZE); };
+  const handlePeriod = (p: string) => { setActivePeriod(p); setVisibleCount(PAGE_SIZE); };
+
   return (
     <div className="min-h-screen bg-background pb-20 md:pb-0">
       <Header />
@@ -93,7 +100,7 @@ const Rankings = () => {
 
         <div className="flex gap-1.5 overflow-x-auto pb-2 mb-3 scrollbar-none">
           {genres.map((f) => (
-            <button key={f} onClick={() => setActiveGenre(f)}
+            <button key={f} onClick={() => handleGenre(f)}
               className={`px-3 py-1.5 rounded-lg text-[11px] font-medium whitespace-nowrap transition-all duration-200 ${
                 activeGenre === f ? "bg-primary text-primary-foreground shadow-sm"
                   : "bg-card text-muted-foreground hover:text-foreground border border-border/40"
@@ -103,7 +110,7 @@ const Rankings = () => {
 
         <div className="flex gap-1.5 overflow-x-auto pb-3 mb-5 scrollbar-none">
           {periods.map((p) => (
-            <button key={p} onClick={() => setActivePeriod(p)}
+            <button key={p} onClick={() => handlePeriod(p)}
               className={`px-2.5 py-1 rounded-md text-[10px] font-medium whitespace-nowrap transition-all duration-200 ${
                 activePeriod === p ? "bg-accent/15 text-accent" : "text-muted-foreground hover:text-foreground"
               }`}>{p}</button>
@@ -120,36 +127,49 @@ const Rankings = () => {
             </Link>
           </div>
         ) : (
-          <div className="space-y-1.5">
-            {filtered.map((r, i) => (
-              <motion.div key={r.album_id}
-                initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.04, duration: 0.3 }}>
-                <Link
-                  to={`/album/${r.album_id}`}
-                  className="bg-card rounded-xl p-3.5 border border-border/40 hover:border-primary/20 transition-all duration-200 flex items-center gap-3.5 group"
-                >
-                  <RankBadge rank={i + 1} />
-                  <div className="w-11 h-11 rounded-lg overflow-hidden bg-muted shrink-0 shadow-sm">
-                    {r.cover_url && <img src={r.cover_url} alt={r.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" loading="lazy" />}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-foreground truncate group-hover:text-accent transition-colors">{r.title}</p>
-                    <p className="text-[11px] text-muted-foreground truncate">
-                      {r.artist}{r.genre ? ` · ${r.genre}` : ""}{r.release_year ? ` · ${r.release_year}` : ""}
-                    </p>
-                  </div>
-                  <div className="text-right shrink-0">
-                    <div className="flex items-center gap-1">
-                      <span className="text-sm font-bold text-primary">{r.avg_score.toFixed(2)}</span>
-                      <Star className="w-3 h-3 text-accent fill-accent" />
+          <>
+            <div className="space-y-1.5">
+              {visible.map((r, i) => (
+                <motion.div key={r.album_id}
+                  initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: i * 0.03, duration: 0.3 }}>
+                  <Link
+                    to={`/album/${r.album_id}`}
+                    className="bg-card rounded-xl p-3.5 border border-border/40 hover:border-primary/20 transition-all duration-200 flex items-center gap-3.5 group"
+                  >
+                    <RankBadge rank={i + 1} />
+                    <div className="w-11 h-11 rounded-lg overflow-hidden bg-muted shrink-0 shadow-sm">
+                      {r.cover_url && <img src={r.cover_url} alt={r.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" loading="lazy" />}
                     </div>
-                    <p className="text-[10px] text-muted-foreground">{r.count} {r.count === 1 ? "review" : "reviews"}</p>
-                  </div>
-                </Link>
-              </motion.div>
-            ))}
-          </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-foreground truncate group-hover:text-accent transition-colors">{r.title}</p>
+                      <p className="text-[11px] text-muted-foreground truncate">
+                        {r.artist}{r.genre ? ` · ${r.genre}` : ""}{r.release_year ? ` · ${r.release_year}` : ""}
+                      </p>
+                    </div>
+                    <div className="text-right shrink-0">
+                      <div className="flex items-center gap-1">
+                        <span className="text-sm font-bold text-primary">{r.avg_score.toFixed(2)}</span>
+                        <Star className="w-3 h-3 text-accent fill-accent" />
+                      </div>
+                      <p className="text-[10px] text-muted-foreground">{r.count} {r.count === 1 ? "review" : "reviews"}</p>
+                    </div>
+                  </Link>
+                </motion.div>
+              ))}
+            </div>
+
+            {filtered.length > visibleCount && (
+              <div className="mt-6 text-center">
+                <button
+                  onClick={() => setVisibleCount((v) => v + PAGE_SIZE)}
+                  className="px-6 py-2.5 rounded-xl border border-border/40 bg-card text-sm text-muted-foreground hover:text-foreground hover:border-primary/20 transition-all duration-200"
+                >
+                  Carregar mais ({filtered.length - visibleCount} restantes)
+                </button>
+              </div>
+            )}
+          </>
         )}
       </main>
     </div>

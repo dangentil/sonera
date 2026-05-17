@@ -14,7 +14,7 @@ interface Notification {
   rating_id: string | null;
   read_at: string | null;
   created_at: string;
-  actor?: { username: string; display_name: string };
+  actor?: { username: string; display_name: string; avatar_url: string | null };
 }
 
 const timeAgo = (iso: string) => {
@@ -27,6 +27,9 @@ const timeAgo = (iso: string) => {
 
 const verb = (t: Notification["type"]) =>
   t === "follow" ? "começou a te seguir" : t === "like" ? "curtiu sua avaliação" : "comentou sua avaliação";
+
+const initials = (name: string) =>
+  name.split(" ").map((n) => n[0]).slice(0, 1).join("").toUpperCase() || "U";
 
 const NotificationsBell = () => {
   const { user } = useAuth();
@@ -48,7 +51,7 @@ const NotificationsBell = () => {
     if (ids.length) {
       const { data: profs } = await supabase
         .from("profiles")
-        .select("id, username, display_name")
+        .select("id, username, display_name, avatar_url")
         .in("id", ids);
       const map = new Map((profs ?? []).map((p: any) => [p.id, p]));
       list.forEach((n) => (n.actor = map.get(n.actor_id) as any));
@@ -126,8 +129,14 @@ const NotificationsBell = () => {
                   !n.read_at ? "bg-primary/5" : ""
                 }`}
               >
-                <div className="w-7 h-7 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center text-[10px] font-bold text-primary-foreground shrink-0">
-                  {(n.actor?.display_name ?? "U").slice(0, 1).toUpperCase()}
+                <div className="w-7 h-7 rounded-full overflow-hidden shrink-0">
+                  {n.actor?.avatar_url ? (
+                    <img src={n.actor.avatar_url} alt={n.actor.display_name} className="w-full h-full object-cover" />
+                  ) : (
+                    <div className="w-full h-full bg-gradient-to-br from-primary to-accent flex items-center justify-center text-[10px] font-bold text-primary-foreground">
+                      {initials(n.actor?.display_name ?? "U")}
+                    </div>
+                  )}
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-xs text-foreground leading-snug">

@@ -12,7 +12,7 @@ const ProfilePage = () => {
     if (!user) return;
     supabase
       .from("profiles")
-      .select("id, username, display_name, bio, favorite_artists, created_at")
+      .select("id, username, display_name, bio, favorite_artists, created_at, avatar_url")
       .eq("id", user.id)
       .maybeSingle()
       .then(({ data }) => setProfile(data as ProfileData | null));
